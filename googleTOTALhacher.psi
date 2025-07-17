@@ -1,0 +1,8 @@
+#Entrar em qualquer base dados
+#procurar contas Santander 029 030 031 032 033
+#PESQUISAS DIRETAS SENCIVEIS
+write-output "pesquisar no google estes documentos (xlsx,pdf,docx,txt)"
+write-output "EXEMPLO https://www.santander.pt//tabelas.xlsx tabelas.pdf tabelas.docx tabelas.txt"
+$pesquisa = "filetype:pdf OU filetype:xlsx OU filetype:docx OU filetype:txt sua_pesquisa_aqui"
+$url = [uri]::EscapeDataString($pesquisa)
+Start-Process "https://www.google.com/search?q=$url"
