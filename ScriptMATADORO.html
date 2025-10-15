@@ -1,0 +1,248 @@
+<html>
+<meta charset="utf.8">
+   Advanced Search Tool with Pentest
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-xl p-6">
+            <h1 class="text-3xl font-bold text-center text-blue-600 mb-6">Advanced Search Tool</h1>
+            
+            <!-- Search Input -->
+            <div class="mb-6">
+                <label for="searchQuery" class="block text-gray-700 mb-2">Search Query:</label>
+                <input type="text" id="searchQuery" 
+ class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+ placeholder="Enter your search term..." />
+                <p id="queryError" class="text-red-500 text-sm mt-1 hidden">Please enter a search term</p>
+            </div>
+
+            <!-- Engine Selection -->
+            <div class="mb-6">
+                <label class="block text-gray-700 mb-2">Search Engine:</label>
+                <div class="flex flex-wrap gap-4">
+                    <label class="inline-flex items-center">
+                        <input type="radio" name="engine" value="google" checked class="form-radio text-blue-600" />
+                        <span class="ml-2">Google</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="radio" name="engine" value="bing" class="form-radio text-blue-600" />
+                        <span class="ml-2">Bing</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="radio" name="engine" value="yandex" class="form-radio text-blue-600" />
+                        <span class="ml-2">Yandex</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="radio" name="engine" value="all" class="form-radio text-blue-600" />
+                        <span class="ml-2">All</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Pentest Options -->
+            <div class="mb-6 border-t pt-4">
+                <h2 class="text-xl font-semibold text-gray-800 mb-3">Free AI Pentest Tools</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button id="xssTest" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg transition">
+                        <i class="fas fa-shield-alt mr-2"></i>XSS Vulnerability Test
+                    </button>
+                    <button id="sqlTest" class="bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded-lg transition">
+                        <i class="fas fa-database mr-2"></i>SQL Injection Test
+                    </button>
+                </div>
+                <div id="pentestResults" class="mt-4 hidden">
+                    <h3 class="font-medium text-gray-700 mb-2">Test Results:</h3>
+                    <div class="bg-gray-50 p-3 rounded-lg border">
+                        <pre id="pentestOutput" class="text-sm text-gray-800 overflow-auto max-h-40"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex justify-center gap-4 mt-6">
+                <button id="searchBtn" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-lg transition flex items-center">
+                    <i class="fas fa-search mr-2"></i> Deep Search
+                </button>
+                <button id="clearBtn" class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-6 rounded-lg transition">
+                    Clear
+                </button>
+            </div>
+
+            <!-- Results -->
+            <div id="resultsContainer" class="mt-8 hidden">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Search Results</h2>
+                <div class="space-y-4" id="searchResults"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced configuration
+        const config = {
+            searchEngines: {
+                google: 'https://www.google.com/search?q=',
+                bing: 'https://www.bing.com/search?q=',
+                yandex: 'https://yandex.ru/search/?text='
+            },
+            userAgents: [
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15',
+                'Mozilla/5.0 (Linux; Android 13; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36'
+            ],
+            maxDepth: 3,
+            delay: 2000,
+            pentestPayloads: {
+                xss: ['<script>alert("XSS")<\/script>', '<img src=x onerror=alert("XSS")>'],
+                sql: ["' OR '1'='1", "' OR 1=1 --", "admin'--"]
+            }
+        };
+
+        // DOM Elements
+        const searchQuery = document.getElementById('searchQuery');
+        const searchBtn = document.getElementById('searchBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const xssTest = document.getElementById('xssTest');
+        const sqlTest = document.getElementById('sqlTest');
+        const pentestResults = document.getElementById('pentestResults');
+        const pentestOutput = document.getElementById('pentestOutput');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const searchResults = document.getElementById('searchResults');
+        const queryError = document.getElementById('queryError');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Event Listeners
+            searchBtn.addEventListener('click', performSearch);
+            clearBtn.addEventListener('click', clearAll);
+            xssTest.addEventListener('click', () => runPentest('xss'));
+            sqlTest.addEventListener('click', () => runPentest('sql'));
+        });
+
+        // Main Search Function
+        async function performSearch() {
+            const query = searchQuery.value.trim();
+            const engine = document.querySelector('input[name="engine"]:checked').value;
+            
+            // Validate input
+            if (!query) {
+                queryError.classList.remove('hidden');
+                return;
+            } else {
+                queryError.classList.add('hidden');
+            }
+            
+            try {
+                searchBtn.disabled = true;
+                searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Searching...';
+                
+                const results = await deepSearch(query, engine);
+                displayResults(results);
+                
+            } catch (error) {
+                console.error('Search error:', error);
+                alert('An error occurred during search. Please try again.');
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.innerHTML = '<i class="fas fa-search mr-2"></i> Deep Search';
+            }
+        }
+
+        // Enhanced Deep Search Function
+        async function deepSearch(query, engine = 'all', depth = 1) {
+            if (depth > config.maxDepth) return [];
+            
+            const engines = engine === 'all' ? Object.keys(config.searchEngines) : [engine];
+            const results = [];
+            
+            for (const eng of engines) {
+                const url = `${config.searchEngines[eng]}${encodeURIComponent(query)}`;
+                const userAgent = config.userAgents[Math.floor(Math.random() * config.userAgents.length)];
+                
+                try {
+                    // Simulate search (in a real app, you would use fetch/axios)
+                    await new Promise(resolve => setTimeout(resolve, config.delay));
+                    
+                    // Mock results for demonstration
+                    results.push({
+                        engine: eng,
+                        url: url,
+                        title: `${query} - ${eng} search results`,
+                        snippet: `This is a mock result from ${eng} for query "${query}" at depth ${depth}`,
+                        depth: depth
+                    });
+                    
+                    // Recursive call for deeper search
+                    if (depth < config.maxDepth) {
+                        const deeperResults = await deepSearch(query, eng, depth + 1);
+                        results.push(...deeperResults);
+                    }
+                    
+                } catch (error) {
+                    console.error(`Error searching with ${eng}:`, error);
+                }
+            }
+            
+            return results;
+        }
+
+        // Display Results
+        function displayResults(results) {
+            resultsContainer.classList.remove('hidden');
+            searchResults.innerHTML = '';
+            
+            if (results.length === 0) {
+                searchResults.innerHTML = '<p class="text-gray-500">No results found.</p>';
+                return;
+            }
+            
+            results.forEach(result => {
+                const resultElement = document.createElement('div');
+                resultElement.className = 'bg-gray-50 p-4 rounded-lg border border-gray-200';
+                resultElement.innerHTML = `
+                    <h3 class="font-semibold text-blue-600">${result.title}</h3>
+                    <p class="text-gray-600 my-2">${result.snippet}</p>
+                    <div class="flex justify-between items-center text-sm text-gray-500">
+                        <span>Engine: ${result.engine}</span>
+                        <span>Depth: ${result.depth}</span>
+                    </div>
+                    <a href="${result.url}" target="_blank" class="inline-block mt-2 text-blue-500 hover:underline">
+                        View on ${result.engine} <i class="fas fa-external-link-alt ml-1"></i>
+                    </a>
+                `;
+                searchResults.appendChild(resultElement);
+            });
+        }
+
+        // Pentest Functions
+        function runPentest(type) {
+            pentestResults.classList.remove('hidden');
+            pentestOutput.textContent = `Running ${type.toUpperCase()} tests...\n`;
+            
+            setTimeout(() => {
+                const payloads = config.pentestPayloads[type];
+                let output = `${type.toUpperCase()} Test Results:\n\n`;
+                
+                payloads.forEach((payload, i) => {
+                    const vulnerable = Math.random() > 0.7; // 30% chance of being vulnerable
+                    output += `Test ${i+1}: ${payload}\n`;
+                    output += `Result: ${vulnerable ? 'VULNERABLE!' : 'Secure'}\n\n`;
+                    
+                    if (vulnerable) {
+                        output += `Recommendation: Implement ${type === 'xss' ? 'output encoding' : 'parameterized queries'}\n\n`;
+                    }
+                });
+                
+                pentestOutput.textContent = output;
+            }, 1500);
+        }
+
+        // Clear Function
+        function clearAll() {
+            searchQuery.value = '';
+            pentestResults.classList.add('hidden');
+            resultsContainer.classList.add('hidden');
+            queryError.classList.add('hidden');
+        }
+    </script>
+</html>
