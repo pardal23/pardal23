@@ -1,0 +1,433 @@
+ <!DOCTYPE html>
+
+<html lang="pt-BR">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Mini Base Local com Exportação (IndexedDB)</title>
+
+<style>
+
+  body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+
+  h2 { margin-top: 0; }
+
+  button, input[type=file] { padding: 6px 10px; margin: 3px; }
+
+  textarea { width: 100%; height: 250px; font-family: monospace; margin-top: 10px; resize: vertical; }
+
+  #fileList { margin-top: 10px; background: #fff; padding: 10px; border: 1px solid #ccc; }
+
+  .file-item { padding: 6px 0; border-bottom: 1px solid #eee; }
+
+</style>
+
+</head>
+
+<body>
+
+
+
+<h2>📦 Mini Banco Local (IndexedDB) com Exportação</h2>
+
+
+
+<div>
+
+  <input type="file" id="fileInput">
+
+  <button id="importBtn">📤 Importar</button>
+
+  <button id="exportAllBtn">📦 Exportar Base (.zip)</button>
+
+  <button id="clearBtn">🗑️ Limpar Todos</button>
+
+</div>
+
+
+
+<div id="fileList">Carregando arquivos...</div>
+
+
+
+<h3>📝 Editor de Texto</h3>
+
+<div>
+
+  <button id="saveLocal">💾 Salvar no localStorage</button>
+
+  <button id="loadLocal">📂 Carregar</button>
+
+  <button id="exportTxt">⬇️ Exportar Texto</button>
+
+</div>
+
+<textarea id="editor" placeholder="Digite ou carregue texto aqui..."></textarea>
+
+
+
+<!-- Biblioteca JSZip para gerar ZIP -->
+
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+
+
+<script>
+
+let db;
+
+const dbName = "MiniFileDB";
+
+const storeName = "files";
+
+const STORAGE_KEY = "texto_local";
+
+const editor = document.getElementById("editor");
+
+
+
+// === IndexedDB ===
+
+function initDB() {
+
+  const req = indexedDB.open(dbName, 1);
+
+  req.onupgradeneeded = e => {
+
+    db = e.target.result;
+
+    db.createObjectStore(storeName, { keyPath: "id", autoIncrement: true });
+
+  };
+
+  req.onsuccess = e => { db = e.target.result; listFiles(); };
+
+  req.onerror = e => alert("Erro ao abrir banco: " + e.target.errorCode);
+
+}
+
+
+
+// === Funções de banco ===
+
+function addFile(file, buffer) {
+
+  const tx = db.transaction([storeName], "readwrite");
+
+  const store = tx.objectStore(storeName);
+
+  let textContent = null;
+
+  try {
+
+    textContent = new TextDecoder("utf-8").decode(buffer);
+
+    if ((textContent.match(/\0/g) || []).length > textContent.length * 0.02) textContent = null;
+
+  } catch {}
+
+  store.add({
+
+    name: file.name,
+
+    type: file.type,
+
+    size: file.size,
+
+    data: buffer,
+
+    textContent,
+
+    created: new Date().toISOString()
+
+  }).onsuccess = listFiles;
+
+}
+
+
+
+function listFiles() {
+
+  const tx = db.transaction([storeName], "readonly");
+
+  const store = tx.objectStore(storeName);
+
+  store.getAll().onsuccess = e => {
+
+    const files = e.target.result;
+
+    const div = document.getElementById("fileList");
+
+    if (!files.length) return div.innerHTML = "<i>Nenhum arquivo salvo.</i>";
+
+    div.innerHTML = "";
+
+    files.forEach(f => {
+
+      const el = document.createElement("div");
+
+      el.className = "file-item";
+
+      el.innerHTML = `
+
+        <b>${f.name}</b> (${(f.size/1024).toFixed(1)} KB)
+
+        <button onclick="openFile(${f.id})">Abrir</button>
+
+        <button onclick="downloadFile(${f.id})">Baixar</button>
+
+        <button onclick="deleteFile(${f.id})">Excluir</button>
+
+      `;
+
+      div.appendChild(el);
+
+    });
+
+  };
+
+}
+
+
+
+function openFile(id) {
+
+  const tx = db.transaction([storeName], "readonly");
+
+  tx.objectStore(storeName).get(id).onsuccess = e => {
+
+    const f = e.target.result;
+
+    if (!f) return alert("Arquivo não encontrado!");
+
+    editor.value = f.textContent || "[Arquivo binário - não exibível]";
+
+  };
+
+}
+
+
+
+function downloadFile(id) {
+
+  const tx = db.transaction([storeName], "readonly");
+
+  tx.objectStore(storeName).get(id).onsuccess = e => {
+
+    const f = e.target.result;
+
+    const blob = new Blob([f.data], { type: f.type });
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+
+    a.href = url; a.download = f.name; a.click();
+
+    URL.revokeObjectURL(url);
+
+  };
+
+}
+
+
+
+function deleteFile(id) {
+
+  if (!confirm("Excluir este arquivo?")) return;
+
+  const tx = db.transaction([storeName], "readwrite");
+
+  tx.objectStore(storeName).delete(id).onsuccess = listFiles;
+
+}
+
+
+
+document.getElementById("clearBtn").onclick = () => {
+
+  if (!confirm("Apagar todos os arquivos?")) return;
+
+  db.transaction([storeName], "readwrite").objectStore(storeName).clear().onsuccess = listFiles;
+
+};
+
+
+
+// === Importação ===
+
+document.getElementById("importBtn").onclick = () => {
+
+  const file = document.getElementById("fileInput").files[0];
+
+  if (!file) return alert("Escolha um arquivo primeiro!");
+
+  const reader = new FileReader();
+
+  reader.onload = e => addFile(file, e.target.result);
+
+  reader.readAsArrayBuffer(file);
+
+};
+
+
+
+// === Exportar todos (ZIP) ===
+
+document.getElementById("exportAllBtn").onclick = async () => {
+
+  const zip = new JSZip();
+
+  const tx = db.transaction([storeName], "readonly");
+
+  const store = tx.objectStore(storeName);
+
+  const req = store.getAll();
+
+  req.onsuccess = async e => {
+
+    const files = e.target.result;
+
+    if (!files.length) return alert("Nenhum arquivo para exportar.");
+
+    files.forEach(f => zip.file(f.name, f.data));
+
+    const blob = await zip.generateAsync({ type: "blob" });
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+
+    a.href = url;
+
+    a.download = "backup_base.zip";
+
+    a.click();
+
+    URL.revokeObjectURL(url);
+
+  };
+
+};
+
+
+
+// === Textarea & LocalStorage ===
+
+document.getElementById("saveLocal").onclick = () => {
+
+  localStorage.setItem(STORAGE_KEY, editor.value);
+
+  alert("Texto salvo!");
+
+};
+
+document.getElementById("loadLocal").onclick = () => {
+
+  const val = localStorage.getItem(STORAGE_KEY);
+
+  if (!val) return alert("Nada salvo.");
+
+  editor.value = val;
+
+};
+
+document.getElementById("exportTxt").onclick = () => {
+
+  const blob = new Blob([editor.value], { type: "text/plain" });
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+
+  a.href = url; a.download = "texto.txt"; a.click();
+
+  URL.revokeObjectURL(url);
+
+};
+
+
+
+// === Inicialização ===
+
+initDB();
+
+</script>
+<script>
+// === Reforço da função de importação (melhorias adicionais) ===
+
+// Substitui o comportamento do botão, mas sem remover o original do código acima
+document.getElementById("importBtn").onclick = async () => {
+  const input = document.getElementById("fileInput");
+  const files = input.files;
+  if (!files.length) return alert("Escolha ao menos um arquivo!");
+
+  for (const file of files) {
+    try {
+      // Se for um ZIP exportado pela própria base
+      if (file.name.toLowerCase().endsWith(".zip")) {
+        await importarZip(file);
+      } else {
+        await importarArquivoUnico(file);
+      }
+    } catch (err) {
+      console.error("Erro ao importar:", err);
+      alert(`Erro ao importar "${file.name}": ${err.message}`);
+    }
+  }
+
+  listFiles();
+  alert("Importação concluída!");
+};
+
+// Função auxiliar: importar um arquivo individual
+async function importarArquivoUnico(file) {
+  const buffer = await file.arrayBuffer();
+
+  // Verifica duplicados por nome e tamanho
+  const tx = db.transaction([storeName], "readonly");
+  const store = tx.objectStore(storeName);
+  const all = await new Promise(res => {
+    const req = store.getAll();
+    req.onsuccess = e => res(e.target.result);
+  });
+
+  if (all.some(f => f.name === file.name && f.size === file.size)) {
+    if (!confirm(`O arquivo "${file.name}" já existe. Deseja sobrescrever?`)) return;
+    // apaga o existente antes de adicionar o novo
+    const delTx = db.transaction([storeName], "readwrite");
+    const delStore = delTx.objectStore(storeName);
+    const existente = all.find(f => f.name === file.name && f.size === file.size);
+    delStore.delete(existente.id);
+  }
+
+  addFile(file, buffer);
+}
+
+// Função auxiliar: importar arquivos de dentro de um ZIP
+async function importarZip(file) {
+  const zip = await JSZip.loadAsync(file);
+  const entries = Object.values(zip.files);
+
+  if (!entries.length) throw new Error("ZIP vazio ou inválido.");
+
+  for (const entry of entries) {
+    if (entry.dir) continue; // ignora pastas
+    const content = await entry.async("arraybuffer");
+    const fakeFile = {
+      name: entry.name,
+      size: content.byteLength,
+      type: "application/octet-stream"
+    };
+    addFile(fakeFile, content);
+  }
+}
+</script>
+</body>
+
+</html>
+
