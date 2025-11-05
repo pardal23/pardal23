@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Editor JSON & Ferramentas — com envio real</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial; color:#111}
+    body{max-width:980px;margin:20px auto;padding:18px;border-radius:10px;background:#fafafa;border:1px solid #eee}
+    h1{font-size:20px;margin:0 0 8px}
+    p{margin:6px 0;color:#333}
+    .cols{display:flex;gap:12px;flex-wrap:wrap}
+    .card{flex:1;min-width:300px;background:#fff;padding:12px;border-radius:8px;border:1px solid #e6e6e6}
+    pre.json{background:#f7f9fc;border:1px dashed #e0e7ff;padding:10px;border-radius:6px;white-space:pre-wrap;word-wrap:break-word;font-size:13px}
+    textarea{width:100%;min-height:160px;padding:8px;border-radius:6px;border:1px solid #ddd;font-family:monospace;resize:vertical}
+    input[type="text"]{width:100%;padding:8px;border-radius:6px;border:1px solid #ccc}
+    .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    button{padding:8px 12px;border-radius:6px;border:1px solid #cfcfcf;background:#fff;cursor:pointer}
+    button.primary{background:#0b76ff;color:#fff;border-color:#055ed1}
+    button.ghost{background:#f8fafc;border-color:#e6eefc}
+    small.note{display:block;color:#666;margin-top:8px}
+    .status{margin-top:10px;padding:10px;border-radius:6px;background:#fff;border:1px solid #eee}
+    footer{margin-top:14px;font-size:13px;color:#666}
+    label{font-size:13px;color:#333}
+    pre#remoteResp{background:#f8f9fa;border:1px solid #ddd;border-radius:6px;padding:10px;font-size:13px;white-space:pre-wrap;word-wrap:break-word;max-height:260px;overflow:auto}
+  </style>
+</head>
+<body>
+  <h1>Editor JSON & Ferramentas</h1>
+  <p>Agora com envio e recebimento real de pacotes JSON (com fallback via proxy CORS).</p>
+
+  <div class="cols">
+    <div class="card" style="flex:1.2">
+      <h3>1) JSON atual</h3>
+      <pre class="json" id="jsonView"></pre>
+
+      <div style="margin-top:10px;">
+        <label for="jsonEdit"><strong>Editar / criar novo JSON</strong></label>
+        <textarea id="jsonEdit" placeholder='Cole ou escreva seu JSON aqui'></textarea>
+        <div class="row" style="margin-top:8px;">
+          <button id="btnApply" class="primary">Aplicar JSON</button>
+          <button id="btnValidate" class="ghost">Validar</button>
+          <button id="btnClear" class="ghost">Limpar</button>
+          <button id="btnReset" class="ghost">Restaurar Exemplo</button>
+        </div>
+      </div>
+      <div class="status" id="statusIO">Status: pronto.</div>
+    </div>
+
+    <div class="card">
+      <h3>2) Enviar / Receber JSON real</h3>
+      <label>URL de destino:</label>
+      <input type="text" id="remoteUrl" placeholder="Ex.: https://httpbin.org/post" value="https://httpbin.org/post" />
+      <div class="row">
+        <button id="btnSendJson" class="primary">Enviar JSON (POST)</button>
+        <button id="btnGetJson" class="ghost">Requisitar JSON (GET)</button>
+      </div>
+      <small class="note">Use APIs que aceitam CORS, como httpbin.org ou dummyjson.com.</small>
+      <hr>
+      <label>Resposta do servidor:</label>
+      <pre id="remoteResp">(nenhuma resposta ainda)</pre>
+    </div>
+
+    <div class="card">
+      <h3>3) Exemplo atual</h3>
+      <pre id="examplePreview"></pre>
+    </div>
+  </div>
+
+  <footer>
+    <small><strong>Atenção:</strong> este arquivo roda localmente e usa proxy automático se o servidor bloquear CORS. Nenhum dado é armazenado.</small>
+  </footer>
+
+<script>
+let baseDados = {
+  "abrirImagem": "https://dummyjson.com/products/1",
+  "requesição": "executar",
+  "autorizado": true
+};
+
+const jsonView = document.getElementById('jsonView');
+const jsonEdit = document.getElementById('jsonEdit');
+const statusIO = document.getElementById('statusIO');
+const remoteResp = document.getElementById('remoteResp');
+const examplePreview = document.getElementById('examplePreview');
+
+function refreshViews() {
+  jsonView.textContent = JSON.stringify(baseDados, null, 2);
+  examplePreview.textContent = JSON.stringify(baseDados, null, 2);
+}
+
+function setStatus(msg, isError=false) {
+  statusIO.textContent = 'Status: ' + msg;
+  statusIO.style.color = isError ? '#900' : '#035';
+}
+
+function tryParseJson(text) {
+  try { return {ok:true,obj:JSON.parse(text)} }
+  catch(e){ return {ok:false,error:e.message} }
+}
+
+document.getElementById('btnApply').onclick = () => {
+  const t = jsonEdit.value.trim();
+  if (!t) return setStatus('Nada para aplicar.', true);
+  const parsed = tryParseJson(t);
+  if (!parsed.ok) return setStatus('JSON inválido: '+parsed.error,true);
+  baseDados = parsed.obj; refreshViews(); setStatus('JSON aplicado.');
+};
+
+document.getElementById('btnValidate').onclick = () => {
+  const parsed = tryParseJson(jsonEdit.value.trim());
+  setStatus(parsed.ok ? 'JSON válido.' : 'JSON inválido: '+parsed.error, !parsed.ok);
+};
+
+document.getElementById('btnClear').onclick = () => {
+  jsonEdit.value=''; setStatus('Limpou.');
+};
+
+document.getElementById('btnReset').onclick = () => {
+  baseDados = {"abrirImagem":"https://dummyjson.com/products/1","requesição":"executar","autorizado":true};
+  jsonEdit.value = JSON.stringify(baseDados,null,2);
+  refreshViews(); setStatus('Exemplo restaurado.');
+};
+
+/* === ENVIO E RECEPÇÃO REAL DE JSON === */
+
+async function tentarFetch(url, options) {
+  async function fazer(u) {
+    const resp = await fetch(u, options);
+    const tipo = resp.headers.get('content-type')||'';
+    const dados = tipo.includes('application/json') ? await resp.json() : await resp.text();
+    remoteResp.textContent = typeof dados==='string'?dados:JSON.stringify(dados,null,2);
+    if (!resp.ok) throw new Error('HTTP '+resp.status);
+  }
+  try {
+    await fazer(url);
+    setStatus('Requisição direta bem-sucedida.');
+  } catch(e) {
+    console.warn('Falhou direto, tentando proxy:', e);
+    try {
+      await fazer('https://corsproxy.io/?' + encodeURIComponent(url));
+      setStatus('Requisição via proxy CORS (fallback).');
+    } catch(err) {
+      setStatus('Falha total: '+err.message, true);
+    }
+  }
+}
+
+document.getElementById('btnSendJson').onclick = async () => {
+  const url = document.getElementById('remoteUrl').value.trim();
+  if (!url) return setStatus('Informe uma URL.', true);
+  const body = JSON.stringify(baseDados);
+  await tentarFetch(url, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','Accept':'application/json'},
+    body
+  });
+};
+
+document.getElementById('btnGetJson').onclick = async () => {
+  const url = document.getElementById('remoteUrl').value.trim();
+  if (!url) return setStatus('Informe uma URL.', true);
+  await tentarFetch(url, {method:'GET', headers:{'Accept':'application/json'}});
+};
+
+/* === INICIALIZAÇÃO === */
+jsonEdit.value = JSON.stringify(baseDados,null,2);
+refreshViews();
+setStatus('Pronto. Pode editar o JSON e enviar.');
+</script>
+</body>
+</html>
