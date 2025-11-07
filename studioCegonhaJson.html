@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Studio Pesquisa Neutra JSON</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f4f4f4; padding:20px; }
+    h1 { color:#333; }
+    textarea {
+      width:100%; height:220px; padding:10px;
+      font-family: monospace; font-size:14px;
+    }
+    .card {
+      background:#fff; border:1px solid #ccc; border-radius:8px;
+      padding:16px; margin-top:20px;
+      box-shadow:0 2px 4px rgba(0,0,0,0.1);
+    }
+    .label { font-weight:bold; color:#555; }
+    .links a {
+      display:inline-block; margin:4px 8px 4px 0; padding:6px 10px;
+      border-radius:6px; text-decoration:none; font-size:0.9em;
+      background:#0078d7; color:#fff;
+    }
+    .links a.google { background:#db4437; }
+    .links a:hover { opacity:0.85; }
+    button, select { margin-top:10px; padding:6px 12px; }
+  </style>
+</head>
+<body>
+  <h1>Studio de Pesquisa Neutra JSON</h1>
+
+  <!-- Textarea com JSON -->
+  <textarea id="jsonInput">{
+  "docsSenciveis": "https://www.cm-albufeira.pt/",
+  "diulgação": "https://jesusempoesia.blogspot.com/",
+  "open": "baseDados",
+  "info": "SEJA FELIZ POR FAVOR",
+  "requesição": "executar",
+  "autorizado": true
+}</textarea>
+  <br>
+  <button id="renderBtn">Atualizar Studio</button>
+  <select id="depthSelect">
+    <option value="5" selected>Profundidade: 5</option>
+    <option value="6">Profundidade: 6</option>
+    <option value="7">Profundidade: 7</option>
+    <option value="8">Profundidade: 8</option>
+  </select>
+
+  <div id="studio"></div>
+
+  <script>
+    const enc = s => encodeURIComponent(s);
+    const isURL = v => /^https?:\/\//i.test(String(v));
+    const hostOf = url => { try { return new URL(url).hostname; } catch { return ""; } };
+
+    // Gera camadas neutras de busca (5–8)
+    function neutralLayers(url, depth) {
+      const host = hostOf(url);
+      const layers = [
+        url,                // 1 literal
+        host,               // 2 domínio
+        `site:${host}`,     // 3 site:
+        `inurl:${host}`,    // 4 inurl:
+        `intitle:${host}`   // 5 intitle:
+      ];
+      if (depth >= 6) layers.push(`site:${host} filetype:pdf`);
+      if (depth >= 7) layers.push(`site:${host} filetype:docx`);
+      if (depth >= 8) layers.push(`site:${host} filetype:xls OR filetype:xlsx`);
+      return layers;
+    }
+
+    function linksBlock(label, query) {
+      const q = enc(query);
+      return `
+        <div class="links">
+          <a href="https://www.bing.com/search?q=${q}" target="_blank">Bing: ${label}</a>
+          <a href="https://www.google.com/search?q=${q}" target="_blank" class="google">Google: ${label}</a>
+        </div>
+      `;
+    }
+
+    function render() {
+      const raw = document.getElementById("jsonInput").value;
+      const depth = parseInt(document.getElementById("depthSelect").value, 10);
+      let parsed;
+      try { parsed = JSON.parse(raw); }
+      catch(e) { alert("JSON inválido"); return; }
+
+      const container = document.getElementById("studio");
+      container.innerHTML = "";
+
+      // percorre o JSON na ordem original
+      for (const [key, value] of Object.entries(parsed)) {
+        if (typeof value === "string" && isURL(value)) {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `<div><span class="label">${key}:</span> ${value}</div>
+            <div class="links"><a href="${value}" target="_blank">Abrir link direto</a></div>`;
+
+          const layers = neutralLayers(value, depth);
+          layers.forEach((q, i) => {
+            card.innerHTML += linksBlock(`${key} camada ${i+1}`, q);
+          });
+
+          container.appendChild(card);
+        }
+      }
+    }
+
+    document.getElementById("renderBtn").addEventListener("click", render);
+    document.getElementById("depthSelect").addEventListener("change", render);
+    render();
+  </script>
+</body>
+</html>
