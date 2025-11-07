@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Studio Educativo JSON</title>
+<style>
+body { font-family: sans-serif; background: #121212; color: #eee; padding: 20px; }
+h2 { color: #06b6d4; }
+textarea { width: 100%; height: 150px; padding: 10px; border-radius: 8px; background: #1e1e1e; color: #eee; border: none; }
+button { margin: 5px; padding: 8px 12px; border-radius: 6px; border: none; background: #06b6d4; color: #022; cursor: pointer; font-weight: bold; }
+.list { margin-top: 15px; max-height: 300px; overflow: auto; }
+.item { padding: 8px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+a { color: #06b6d4; text-decoration: none; }
+input[type=number] { width: 80px; }
+</style>
+</head>
+<body>
+
+<h2>Studio Educativo JSON</h2>
+<p>Cole o JSON de referência:</p>
+<textarea id="jsonInput">{
+"open": "baseDados",
+"informaçoes": "sobre",
+"diulgação": "json-programação",
+"usuario": "https://cbr.ru/eng/",
+"https://cbr.ru/eng/": "https://cbr.ru/eng/base dados",
+"doisLinks": "Pesquisar base dados por palavra chave do link<br>exemplo key index finance",
+"escreverPesquisaNoGoogle": "Exemplo bancoRussia devolve resposta em json no ip google uma única palavra na pesquisa",
+"openIp": "http://8.8.8.8",
+"openOpenIp": "http://23.23.21.2 ",
+"requesição": "executar",
+"autorizado": true
+}</textarea>
+
+<div>
+<button id="load">Carregar JSON</button>
+<button id="prev">Anterior</button>
+<button id="next">Próximo</button>
+<button id="autoStart">Auto Iniciar</button>
+<button id="autoStop" disabled>Parar</button>
+<label>Intervalo(ms): <input type="number" id="interval" value="1500"></label>
+</div>
+
+<div class="list" id="list"></div>
+<div id="status" style="margin-top:10px; color:#06b6d4;"></div>
+
+<script>
+let jsonData = null;
+let links = [];
+let index = -1;
+let autoTimer = null;
+
+const listDiv = document.getElementById('list');
+const statusDiv = document.getElementById('status');
+const loadBtn = document.getElementById('load');
+const prevBtn = document.getElementById('prev');
+const nextBtn = document.getElementById('next');
+const autoStartBtn = document.getElementById('autoStart');
+const autoStopBtn = document.getElementById('autoStop');
+const intervalInput = document.getElementById('interval');
+
+// Extrai links do JSON (para fins educativos)
+function extractLinks(obj) {
+    let result = [];
+    for (const key in obj) {
+        if (typeof obj[key] === 'string' && obj[key].startsWith('http')) {
+            result.push({key: key, url: obj[key]});
+        }
+    }
+    return result;
+}
+
+// Renderiza JSON na tela
+function renderJSON() {
+    listDiv.innerHTML = '';
+    if(!jsonData) return;
+    for(const key in jsonData){
+        const div = document.createElement('div');
+        div.className='item';
+        const label = document.createElement('span');
+        label.textContent = key;
+        div.appendChild(label);
+
+        if(typeof jsonData[key] === 'string' && jsonData[key].startsWith('http')){
+            const a = document.createElement('a');
+            a.href = jsonData[key];
+            a.target='_blank';
+            a.textContent = jsonData[key];
+            div.appendChild(a);
+        } else {
+            const val = document.createElement('span');
+            val.textContent = jsonData[key];
+            div.appendChild(val);
+        }
+        listDiv.appendChild(div);
+    }
+    statusDiv.textContent = `Links encontrados: ${links.length}`;
+}
+
+// Botões e funcionalidade de navegação
+loadBtn.onclick = () => {
+    try {
+        const input = document.getElementById('jsonInput').value;
+        jsonData = JSON.parse(input);
+        links = extractLinks(jsonData);
+        index = -1;
+        renderJSON();
+    } catch(e) {
+        alert('JSON inválido!');
+    }
+}
+
+nextBtn.onclick = () => {
+    if(links.length === 0) return;
+    index = (index+1) % links.length;
+    window.open(links[index].url,'_blank');
+    statusDiv.textContent = `Abrindo: ${links[index].key} → ${links[index].url}`;
+}
+
+prevBtn.onclick = () => {
+    if(links.length === 0) return;
+    index = (index-1 + links.length) % links.length;
+    window.open(links[index].url,'_blank');
+    statusDiv.textContent = `Abrindo: ${links[index].key} → ${links[index].url}`;
+}
+
+autoStartBtn.onclick = () => {
+    if(links.length === 0) return;
+    if(autoTimer) return;
+    const interval = parseInt(intervalInput.value) || 1500;
+    autoStartBtn.disabled = true;
+    autoStopBtn.disabled = false;
+    autoTimer = setInterval(() => {
+        index = (index+1) % links.length;
+        window.open(links[index].url,'_blank');
+        statusDiv.textContent = `Abrindo automaticamente: ${links[index].key} → ${links[index].url}`;
+    }, interval);
+}
+
+autoStopBtn.onclick = () => {
+    if(autoTimer) {
+        clearInterval(autoTimer);
+        autoTimer = null;
+        autoStartBtn.disabled = true;
+        autoStopBtn.disabled = true;
+        statusDiv.textContent = `Auto abertura parada`;
+    }
+}
+
+window.onbeforeunload = () => {
+    if(autoTimer) clearInterval(autoTimer);
+}
+</script>
+
+</body>
+</html>
