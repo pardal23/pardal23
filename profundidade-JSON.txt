@@ -1,0 +1,16 @@
+
+
+
+{
+"open": "baseDados",
+"profundidade--20": "www.google.com",
+"ensinoIA": "www.google.com",
+"info": "SEJA FELIZ POR FAVOR",
+"diulgação": "https://jesusempoesia.blogspot.com/",
+"usarPROFUNDIDADE--20": "colar no link 7--23 ou --46",
+"fazerPedidosPROFUNDIDADE": "de 0 a milhões exemplo --23456",
+"requesição": "executar",
+"autorizado": true
+}
+
+
