@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecionamento Elegante</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .fade-in {
+            animation: fadeIn 0.8s ease-in-out;
+        }
+        .pulse-gentle {
+            animation: pulse 2s infinite;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full fade-in">
+        <div class="bg-white rounded-2xl shadow-xl p-8 text-center">
+            <!-- Ícone animado -->
+            <div class="mb-6 pulse-gentle">
+                <i class="fas fa-external-link-alt text-5xl text-blue-500"></i>
+            </div>
+            
+            <!-- Título -->
+            <h1 class="text-2xl font-bold text-gray-800 mb-4">Redirecionando...</h1>
+            
+            <!-- Descrição -->
+            <p class="text-gray-600 mb-6">
+                Estamos tentando abrir o link em uma nova janela. Aguarde um momento.
+            </p>
+            
+            <!-- Barra de progresso -->
+            <div class="w-full bg-gray-200 rounded-full h-2 mb-6">
+                <div class="bg-blue-500 h-2 rounded-full transition-all duration-3000" id="progressBar"></div>
+            </div>
+            
+            <!-- Botão de ação principal -->
+            <button onclick="openLink()" 
+                    class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 mb-4">
+                <i class="fas fa-rocket mr-2"></i>
+                Abrir Link Agora
+            </button>
+            
+            <!-- Link manual -->
+            <p class="text-sm text-gray-500">
+                Se não funcionar automaticamente, 
+                <a href="https://aistudio.google.com/apps/drive/1T3s0KjF-mrDN1hYpGZFcm3ESZM-7JSVA?showAssistant=true&showPreview=true&resourceKey=" 
+                   target="_blank" 
+                   class="text-blue-500 hover:text-blue-700 underline font-medium">
+                   clique aqui para abrir manualmente
+                </a>
+            </p>
+        </div>
+        
+        <!-- Informações adicionais -->
+        <div class="mt-6 text-center text-gray-500 text-sm">
+            <p><i class="fas fa-shield-alt mr-2"></i>Conteúdo seguro verificado</p>
+        </div>
+    </div>
+
+    <script>
+        const targetUrl = "https://aistudio.google.com/apps/drive/1T3s0KjF-mrDN1hYpGZFcm3ESZM-7JSVA?showAssistant=true&showPreview=true&resourceKey=";
+        
+        function openLink() {
+            // Tenta abrir em nova janela
+            const newWindow = window.open(targetUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+            
+            if (newWindow) {
+                newWindow.focus();
+                showSuccessMessage();
+            } else {
+                // Se bloqueado, mostra opções
+                showPopupBlockedMessage();
+            }
+        }
+        
+        function showSuccessMessage() {
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = '100%';
+            
+            // Atualiza a interface
+            document.querySelector('h1').textContent = 'Aberto com Sucesso!';
+            document.querySelector('.pulse-gentle i').className = 'fas fa-check-circle text-5xl text-green-500';
+        }
+        
+        function showPopupBlockedMessage() {
+            // Cria modal de aviso
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-2xl p-6 max-w-sm mx-4 text-center">
+                    <i class="fas fa-exclamation-triangle text-3xl text-yellow-500 mb-4"></i>
+                    <h2 class="text-xl font-bold text-gray-800 mb-2">Popup Bloqueado</h2>
+                    <p class="text-gray-600 mb-4">Seu navegador bloqueou a abertura automática. O que deseja fazer?</p>
+                    <div class="space-y-2">
+                        <button onclick="redirectCurrentWindow()" class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-600 transition-colors">
+                        Abrir nesta janela
+                        </button>
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" class="w-full bg-gray-300 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors">
+                        Cancelar
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        function redirectCurrentWindow() {
+            window.location.href = targetUrl;
+        }
+        
+        // Inicia automaticamente após um breve delay
+        setTimeout(() => {
+            document.getElementById('progressBar').style.width = '30%';
+            openLink();
+        }, 1000);
+        
+        // Completa a barra de progresso após 3 segundos
+        setTimeout(() => {
+            document.getElementById('progressBar').style.width = '70%';
+        }, 3000);
+    </script>
+</body>
+</html>
