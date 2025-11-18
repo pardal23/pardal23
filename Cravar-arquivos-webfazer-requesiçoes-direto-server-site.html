@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Mensagens + Storage Avançado</title>
+<style>
+    body { font-family: Arial; padding: 20px; }
+    input, button, textarea { margin: 5px 0; padding: 8px; }
+    #caixaB { width: 300px; height: 120px; }
+    #storagePreview { width: 300px; height: 100px; }
+h1{
+clor:red;
+
+}
+{ font-family: Arial; padding: 20px; }
+    #dropzone {
+        border: 3px dashed #444;
+        padding: 40px;
+        text-align: center;
+        background: #f5f5f5;
+        cursor: pointer;
+        font-size: 18px;
+    }
+    .box { margin-top: 20px; }
+h2{
+color:blue;
+}
+</style>
+</head>
+<body>
+
+<h2>Sistema de Envio entre Inputs + Storage</h2>
+
+<!-- INPUT A → envia para B -->
+<input id="inputA" placeholder="Digite a mensagem">
+<button onclick="enviarMensagem()">Enviar para o outro input</button>
+
+<br><br>
+
+<textarea id="caixaB" placeholder="Mensagens recebidas" readonly></textarea>
+
+<hr>
+
+<h3>Storage</h3>
+
+<!-- input principal para guardar no storage -->
+<input id="storageInput" placeholder="Conteúdo para salvar no storage">
+
+<br>
+
+<button onclick="salvarStorage()">Salvar no Storage</button>
+<button onclick="carregarStorage()">Carregar do Storage</button>
+<button onclick="apagarStorage()">Apagar Storage</button>
+
+<br><br>
+
+<h3>Preview do Storage</h3>
+
+<!-- novo input que exibe o conteúdo carregado -->
+<textarea id="storagePreview" placeholder="Preview do arquivo carregado" readonly></textarea>
+
+<script>
+// --- ENVIO ENTRE INPUTS ---
+function enviarMensagem() {
+    const msg = document.getElementById("inputA").value;
+    if (!msg) return alert("Digite algo antes!");
+
+    const caixa = document.getElementById("caixaB");
+    caixa.value += msg + "\n";
+    document.getElementById("inputA").value = "";
+}
+
+// --- SALVAR ---
+function salvarStorage() {
+    const valor = document.getElementById("storageInput").value;
+    if (!valor) return alert("Digite algo para salvar!");
+
+    localStorage.setItem("meuStorage", valor);
+    atualizarPreview(valor);
+    alert("Salvo no storage!");
+}
+
+// --- CARREGAR ---
+function carregarStorage() {
+    const valor = localStorage.getItem("meuStorage");
+    if (!valor) {
+        alert("Storage vazio!");
+        return;
+    }
+
+    document.getElementById("storageInput").value = valor;
+    atualizarPreview(valor);
+
+    alert("Carregado do storage!");
+}
+
+// --- APAGAR ---
+function apagarStorage() {
+    localStorage.removeItem("meuStorage");
+
+    document.getElementById("storageInput").value = "";
+    atualizarPreview("");
+
+    alert("Storage apagado!");
+}
+
+// --- PREVIEW AUTOMÁTICO ---
+function atualizarPreview(valor) {
+    document.getElementById("storagePreview").value = valor;
+}
+
+// --- CARREGA AUTOMATICAMENTE AO ABRIR A PÁGINA ---
+window.onload = () => {
+    const v = localStorage.getItem("meuStorage");
+    if (v) {
+        document.getElementById("storageInput").value = v;
+        atualizarPreview(v);
+    }
+};
+</script>
+<h1>Completando o projeto</h1>
+<h2>📁 Arrastar & Largar — Pasta ou Arquivo</h2>
+
+<div id="dropzone">
+    Arrasta aqui uma PASTA ou ARQUIVO
+</div>
+
+<div class="box">
+    <button id="abrirBtn" disabled>📂 Abrir Pasta/Arquivo</button>
+    <button id="guardarBtn" disabled>💾 Guardar no PC</button>
+</div>
+
+<h3>Info:</h3>
+<pre id="info">Nenhum item carregado.</pre>
+<script>
+let handle = null;
+let fileData = null;
+
+// =============================
+// 1) DRAG & DROP
+// =============================
+const dropzone = document.getElementById("dropzone");
+
+dropzone.addEventListener("dragover", e => {
+    e.preventDefault();
+});
+
+dropzone.addEventListener("drop", async e => {
+    e.preventDefault();
+
+    const item = e.dataTransfer.items[0];
+    if (!item) return alert("Nada arrastado.");
+
+    // Caso seja PASTA
+    if (item.kind === "file" && item.webkitGetAsEntry) {
+        const entry = item.webkitGetAsEntry();
+
+        if (entry.isDirectory) {
+            handle = await window.showDirectoryPicker();
+            fileData = null;
+            document.getElementById("info").textContent = "Pasta aberta (arrastada).";
+        } else {
+            // Ficheiro normal
+            const file = item.getAsFile();
+            fileData = file;
+            handle = null;
+            document.getElementById("info").textContent =
+                `Arquivo carregado: ${file.name} (${file.type})`;
+        }
+    }
+
+    document.getElementById("abrirBtn").disabled = false;
+    document.getElementById("guardarBtn").disabled = false;
+});
+
+// =============================
+// 2) ABRIR PASTA OU FICHEIRO
+// =============================
+document.getElementById("abrirBtn").onclick = async () => {
+    if (handle) {
+        alert("Pasta aberta diretamente no sistema!\n(Conteúdo visível pelo Chrome/Edge)");
+    } else if (fileData) {
+        const text = await fileData.text().catch(() => null);
+        document.getElementById("info").textContent =
+            `Conteúdo do arquivo:\n\n${text || "(binário)"}`;
+    }
+};
+
+// =============================
+// 3) GUARDAR NO PC
+// =============================
+document.getElementById("guardarBtn").onclick = async () => {
+    if (fileData) {
+        // SALVAR ARQUIVO ARRASTADO
+        const newHandle = await window.showSaveFilePicker({
+            suggestedName: fileData.name
+        });
+        const writable = await newHandle.createWritable();
+        await writable.write(await fileData.arrayBuffer());
+        await writable.close();
+        alert("Arquivo guardado no PC!");
+    } else if (handle) {
+        // SALVAR PASTA
+        alert("As pastas já estão no PC — basta abri-las. Para copiar pastas em HTML, só via manual.");
+    }
+};
+</script>
+<h2>CRIAR REQUISIÇAO DIRETO AO SITE<br>EXEMPLO OLA ESPANHA banco espanha site<br>PEdir direto ao site via server e storange<br><a href="https://dequeuniversity.com/rules/axe/4.4/aria-hidden-focus?application=axeAPI">DIVES TRUE UNIVERSIDADE BANCO ESPANHA programation api</a></h2>
+</body>
+</html>
+
+
