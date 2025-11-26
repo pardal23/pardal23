@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON para HTML/JS Conversor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            margin-bottom: 15px;
+        }
+        
+        .converter-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            min-height: 600px;
+        }
+        
+        .input-section, .output-section {
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .input-section {
+            background: #f8f9fa;
+            border-right: 1px solid #e9ecef;
+        }
+        
+        .output-section {
+            background: #ffffff;
+        }
+        
+        h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        h3 i {
+            font-size: 1.2rem;
+        }
+        
+        .code-area {
+            flex: 1;
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            transition: border-color 0.3s;
+        }
+        
+        .code-area:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .json-input {
+            background: #f8f9fa;
+        }
+        
+        .html-output {
+            background: #f0f8ff;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .copy-btn {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .copy-btn:hover {
+            background: #219653;
+        }
+        
+        .clear-btn {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .clear-btn:hover {
+            background: #c0392b;
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            margin-top: 10px;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .preview-section {
+            margin-top: 20px;
+            border-top: 1px solid #e9ecef;
+            padding-top: 20px;
+        }
+        
+        .preview-container {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: white;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .property {
+            margin: 8px 0;
+            padding: 8px;
+            border-left: 3px solid #3498db;
+            background: #f8f9fa;
+        }
+        
+        .boolean {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .url {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .converter-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .input-section {
+                border-right: none;
+                border-bottom: 1px solid #e9ecef;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>JSON para HTML/JS Conversor</h1>
+            <p class="subtitle">Converta JSON em código HTML e JavaScript em tempo real</p>
+        </header>
+        
+        <div class="converter-container">
+            <div class="input-section">
+                <h3>📥 JSON de Entrada</h3>
+                <textarea id="jsonInput" class="code-area json-input" rows="15" placeholder="Cole ou digite seu JSON aqui...">
+{
+  "imports": ["body", "print", "tabelasLogin", "documentosIndex", "html", "app"],
+  "documentosIndex": "https://www.bportugal.pt/",
+  "requisicao": "executar",
+  "aprovado": true
+}
+                </textarea>
+                <div class="actions">
+                    <button class="copy-btn" onclick="copyToClipboard('jsonInput')">📋 Copiar JSON</button>
+                    <button class="clear-btn" onclick="clearInput()">🗑️ Limpar</button>
+                </div>
+                <div id="errorMessage" class="error-message"></div>
+            </div>
+            
+            <div class="output-section">
+                <h3>📤 HTML/JS Gerado</h3>
+                <textarea id="htmlOutput" class="code-area html-output" rows="15" readonly></textarea>
+                <div class="actions">
+                    <button class="copy-btn" onclick="copyToClipboard('htmlOutput')">📋 Copiar HTML</button>
+                </div>
+                
+                <div class="preview-section">
+                    <h3>👁️ Pré-visualização</h3>
+                    <div id="previewContainer" class="preview-container">
+                        <!-- A pré-visualização será inserida aqui -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Elementos DOM
+        const jsonInput = document.getElementById('jsonInput');
+        const htmlOutput = document.getElementById('htmlOutput');
+        const errorMessage = document.getElementById('errorMessage');
+        const previewContainer = document.getElementById('previewContainer');
+
+        // Função principal de conversão
+        function convertJSONToHTML() {
+            try {
+                const jsonText = jsonInput.value.trim();
+                
+                if (!jsonText) {
+                    htmlOutput.value = '';
+                    previewContainer.innerHTML = '<p style="color: #7f8c8d;">Digite JSON para ver a conversão...</p>';
+                    errorMessage.style.display = 'none';
+                    return;
+                }
+                
+                const jsonData = JSON.parse(jsonText);
+                let htmlCode = '';
+                let previewHtml = '';
+                
+                // Gerar código HTML
+                htmlCode += '<!DOCTYPE html>\n';
+                htmlCode += '<html lang="pt">\n';
+                htmlCode += '<head>\n';
+                htmlCode += '    <meta charset="UTF-8">\n';
+                htmlCode += '    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n';
+                htmlCode += '    <title>JSON Renderizado</title>\n';
+                htmlCode += '    <style>\n';
+                htmlCode += '        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }\n';
+                htmlCode += '        .json-display { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }\n';
+                htmlCode += '        .section { margin-bottom: 20px; }\n';
+                htmlCode += '        .property { margin: 10px 0; padding: 8px; border-left: 3px solid #3498db; background: #f8f9fa; }\n';
+                htmlCode += '        .boolean { color: #e74c3c; font-weight: bold; }\n';
+                htmlCode += '        .url { color: #2980b9; text-decoration: underline; }\n';
+                htmlCode += '        h4 { color: #2c3e50; margin-bottom: 10px; }\n';
+                htmlCode += '        ul { list-style-type: none; padding-left: 0; }\n';
+                htmlCode += '        li { padding: 5px 0; }\n';
+                htmlCode += '    </style>\n';
+                htmlCode += '</head>\n';
+                htmlCode += '<body>\n';
+                htmlCode += '    <div class="json-display">\n';
+                
+                // Gerar pré-visualização HTML
+                previewHtml += '<div class="json-display">\n';
+                
+                // Processar imports
+                if (jsonData.imports && Array.isArray(jsonData.imports)) {
+                    htmlCode += '        <div class="section imports-section">\n';
+                    htmlCode += '            <h4>📦 Imports:</h4>\n';
+                    htmlCode += '            <ul>\n';
+                    
+                    previewHtml += '<div class="section imports-section">\n';
+                    previewHtml += '<h4>📦 Imports:</h4>\n';
+                    previewHtml += '<ul>\n';
+                    
+                    jsonData.imports.forEach(item => {
+                        htmlCode += `                <li>${item}</li>\n`;
+                        previewHtml += `<li>${item}</li>\n`;
+                    });
+                    
+                    htmlCode += '            </ul>\n';
+                    htmlCode += '        </div>\n';
+                    
+                    previewHtml += '</ul>\n';
+                    previewHtml += '</div>\n';
+                }
+                
+                // Processar outras propriedades
+                for (const [key, value] of Object.entries(jsonData)) {
+                    if (key !== 'imports') {
+                        htmlCode += `        <div class="property">\n`;
+                        htmlCode += `            <strong>${key}:</strong> `;
+                        
+                        previewHtml += `<div class="property">\n`;
+                        previewHtml += `<strong>${key}:</strong> `;
+                        
+                        if (typeof value === 'boolean') {
+                            htmlCode += `<span class="boolean">${value}</span>`;
+                            previewHtml += `<span class="boolean">${value}</span>`;
+                        } else if (typeof value === 'string' && value.startsWith('http')) {
+                            htmlCode += `<a href="${value}" target="_blank" class="url">${value}</a>`;
+                            previewHtml += `<a href="${value}" target="_blank" class="url">${value}</a>`;
+                        } else {
+                            htmlCode += `<span>${value}</span>`;
+                            previewHtml += `<span>${value}</span>`;
+                        }
+                        
+                        htmlCode += '\n        </div>\n';
+                        previewHtml += '</div>\n';
+                    }
+                }
+                
+                htmlCode += '    </div>\n';
+                htmlCode += '</body>\n';
+                htmlCode += '</html>';
+                
+                previewHtml += '</div>';
+                
+                // Atualizar saída
+                htmlOutput.value = htmlCode;
+                previewContainer.innerHTML = previewHtml;
+                errorMessage.style.display = 'none';
+                
+            } catch (error) {
+                htmlOutput.value = '';
+                previewContainer.innerHTML = '<p style="color: #e74c3c;">❌ Erro: JSON inválido. Verifique a formatação.</p>';
+                errorMessage.textContent = `Erro de análise: ${error.message}`;
+                errorMessage.style.display = 'block';
+            }
+        }
+
+        // Funções auxiliares
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            element.select();
+            document.execCommand('copy');
+            
+            // Feedback visual
+            const originalText = element.value;
+            alert('Código copiado para a área de transferência!');
+        }
+
+        function clearInput() {
+            jsonInput.value = '';
+            convertJSONToHTML();
+        }
+
+        // Event listeners
+        jsonInput.addEventListener('input', convertJSONToHTML);
+        
+        // Converter inicialmente
+        convertJSONToHTML();
+    </script>
+<p><a href="https://jesusempoesia.blogspot.com/p/converter-json-em-html-em-tempo-real.html">Jesus em poesia json para html</a></p>
+<h3>começar requesiçao json==url site/?pesquisa={json}url=site</h3>
+</body>
+</html>
