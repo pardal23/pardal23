@@ -1,0 +1,285 @@
+ <!DOCTYPE html>
+
+<html lang="pt">
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>APP HUNTER ULTRA — 200 Rotas</title>
+
+
+
+<style>
+
+    body { background:#0d0d0d; color:white; padding:20px; font-family:Arial }
+
+    input { width:90%; max-width:500px; padding:12px; border-radius:6px; margin-bottom:10px; }
+
+    button { padding:12px 25px; background:#00d0ff; border:none; border-radius:6px; color:#000; font-weight:bold; cursor:pointer }
+
+    button:hover { background:#00a6cc }
+
+    a { color:#4fc3ff }
+
+    .ok { color:#5fff5f }
+
+    .fail { color:#ff5f5f }
+
+</style>
+
+</head>
+
+<body>
+
+
+
+<h2>🔥 APP HUNTER ULTRA — Caçador de Apps (200 Rotas)</h2>
+
+
+
+<input id="urlInput" placeholder="https://cnnportugal.iol.pt/">
+
+<button onclick="hunt()">Caçar Apps</button>
+
+
+
+<div id="status"></div>
+
+<div id="results" style="margin-top:20px"></div>
+
+
+
+<script>
+
+const ROUTES = [];
+
+
+
+// ROTAS PRINCIPAIS
+
+const core = [
+
+    "{app}", "/app", "/apps", "/mobile", "/download",
+
+    "/store", "/play", "/ios", "/android", "/appstore"
+
+];
+
+
+
+// SUB-ROTAS COMUNS
+
+const bases = [
+
+    "app", "apps", "mobile", "client", "customer", "service",
+
+    "api", "v1", "v2", "v3", "internal", "portal", "services",
+
+    "system", "software", "appcenter", "download", "static",
+
+    "content", "files", "bundle", "manifest", "link", "links",
+
+    "store", "market", "platform", "webapp", "module", "gateway"
+
+];
+
+
+
+// EXTENSÕES E VARIAÇÕES
+
+const suffix = [
+
+    "", "/", "/ios", "/android", "/win", "/download",
+
+    "/install", "/meta", "/info", "/data", "/config",
+
+    "/setup", "/details", "/index", "/start", "/launch"
+
+];
+
+
+
+// Gerar automaticamente 200 combinações
+
+core.forEach(c => ROUTES.push(c));
+
+
+
+bases.forEach(b => {
+
+    suffix.forEach(s => ROUTES.push("/" + b + s));
+
+});
+
+
+
+// Garantir que temos 200+
+
+while (ROUTES.length < 200) {
+
+    ROUTES.push("/app" + Math.floor(Math.random() * 999));
+
+}
+
+
+
+function buildURL(base, rota) {
+
+    if (rota.startsWith("{")) return base + rota;
+
+    return base.endsWith("/") ? base.slice(0, -1) + rota : base + rota;
+
+}
+
+
+
+async function quickHEAD(url) {
+
+    try {
+
+        await fetch(url, { method:"HEAD", mode:"no-cors" });
+
+        return true;
+
+    } catch { return false; }
+
+}
+
+
+
+// Extração de apps do HTML
+
+function extractAppLinks(html) {
+
+    const links = [];
+
+    const patterns = {
+
+        ios: /https?:\/\/apps\.apple\.com\/[^\s"'<>]+/gi,
+
+        android: /https?:\/\/play\.google\.com\/[^\s"'<>]+/gi,
+
+        huawei: /https?:\/\/appgallery\.huawei\.com\/[^\s"'<>]+/gi,
+
+        apk: /https?:\/\/[^\s"'<>]+\.apk/gi
+
+    };
+
+    for (const type in patterns) {
+
+        const found = html.match(patterns[type]);
+
+        if (found) found.forEach(url => links.push({ type, url }));
+
+    }
+
+    return links;
+
+}
+
+
+
+async function fetchHTML(url) {
+
+    try {
+
+        const res = await fetch(url, { mode:"cors" });
+
+        return await res.text();
+
+    } catch { return ""; }
+
+}
+
+
+
+async function hunt() {
+
+    const base = document.getElementById("urlInput").value.trim();
+
+    const status = document.getElementById("status");
+
+    const results = document.getElementById("results");
+
+
+
+    status.innerHTML = "⏳ A testar 200 rotas escondidas…";
+
+    results.innerHTML = "";
+
+
+
+    if (!base) return alert("Insere um URL válido!");
+
+
+
+    let found = [];
+
+
+
+    // 1 — Testar rotas ocultas
+
+    await Promise.all(
+
+        ROUTES.map(async rota => {
+
+            const url = buildURL(base, rota);
+
+            const ok = await quickHEAD(url);
+
+            if (ok) found.push({ type:"rota", url });
+
+        })
+
+    );
+
+
+
+    // 2 — Varre o HTML do link pai
+
+    const html = await fetchHTML(base);
+
+    if (html) {
+
+        extractAppLinks(html).forEach(e => found.push(e));
+
+    }
+
+
+
+    if (found.length === 0) {
+
+        status.innerHTML = "<span class='fail'>❌ Nenhuma app encontrada.</span>";
+
+        return;
+
+    }
+
+
+
+    status.innerHTML = `<span class='ok'>✔ Apps encontradas (${found.length}):</span>`;
+
+
+
+    found.forEach(f => {
+
+        results.innerHTML += `
+
+            <p class="ok">→ <strong>${f.type.toUpperCase()}</strong>: 
+
+            <a href="${f.url}" target="_blank">${f.url}</a></p>
+
+        `;
+
+    });
+
+}
+
+</script>
+
+
+
+</body>
+
+</html>
