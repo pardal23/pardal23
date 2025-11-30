@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Ultimate Crawler 2025 – Safe Edition</title>
+
+<style>
+/* ======= TEMA NEON DARK PROFISSIONAL ======= */
+body {
+    background:#0a0a0a;
+    color:#00eaff;
+    font-family:Consolas, monospace;
+    margin:20px;
+}
+h1 {
+    text-shadow:0 0 10px #00eaff;
+    font-size:30px;
+}
+.box {
+    background:#111;
+    border:1px solid #222;
+    padding:15px;
+    margin-bottom:20px;
+    border-radius:8px;
+}
+button {
+    padding:8px 15px;
+    border:0;
+    background:#0099ff;
+    color:#fff;
+    cursor:pointer;
+    margin-right:10px;
+    border-radius:4px;
+    font-weight:bold;
+}
+button:hover { background:#00c3ff; }
+input {
+    padding:8px;
+    width:60%;
+    background:#000;
+    border:1px solid #00eaff;
+    color:#0ff;
+}
+pre {
+    background:#000;
+    padding:10px;
+    border:1px solid #00eaff;
+    height:200px;
+    overflow:auto;
+}
+.result-item {
+    padding:8px;
+    background:#0d0d0d;
+    margin:4px 0;
+    border-bottom:1px solid #222;
+}
+.tag {
+    padding:3px 5px;
+    border-radius:4px;
+    font-size:10px;
+    margin-left:8px;
+}
+.tag-internal{background:#0066ff;}
+.tag-external{background:#ff6600;}
+.tag-media{background:#00bbcc;}
+.tag-doc{background:#cc00cc;}
+.tag-api{background:#9900ff;}
+.tag-contact{background:#00cc55;}
+.tag-social{background:#ffaa00;}
+.tag-info{background:#666;}
+canvas {
+    background:#000;
+    border:1px solid #222;
+    margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Ultimate Crawler 2025 – Safe Edition</h1>
+
+<div class="box">
+    <input id="url" placeholder="https://exemplo.com">
+    <button onclick="start()">Iniciar</button>
+    <button onclick="exportTXT()">TXT</button>
+    <button onclick="exportCSV()">CSV</button>
+    <button onclick="exportJSON()">JSON</button>
+    <button onclick="clearAll()">Limpar</button>
+</div>
+
+<div class="box">
+    <h3>Console</h3>
+    <pre id="log">[READY] Sistema iniciado.</pre>
+</div>
+
+<div class="box">
+    <h3>Estatísticas</h3>
+    <canvas id="chart" width="400" height="180"></canvas>
+</div>
+
+<div class="box">
+    <h3>Resultados</h3>
+    <div id="results"></div>
+</div>
+
+<div class="box">
+    <h3>IP & Informações</h3>
+    <div id="ipinfo"></div>
+</div>
+
+<script>
+/* ================================================================
+   VARIÁVEIS
+================================================================ */
+let visited = new Set();
+let results = [];
+let root = "";
+
+/* ================================================================
+   6 PROXIES ROTATIVAS – SEGURO
+================================================================ */
+const proxyList = [
+    "https://corsproxy.io/?",
+    "https://api.allorigins.win/raw?url=",
+    "https://thingproxy.freeboard.io/fetch/",
+    "https://api.codetabs.com/v1/proxy?quest=",
+    "https://mocors.vercel.app/api?url=",
+    "https://cors.isomorphic-git.org/?url="
+];
+
+let proxyState = proxyList.map(p=>({
+    url:p,
+    score:100,
+    fail:0,
+    last:0,
+    ban:0
+}));
+
+function log(msg){
+    let el = document.getElementById("log");
+    el.textContent += "\n" + msg;
+    el.scrollTop = el.scrollHeight;
+}
+
+/* ================================================================
+   FETCH COM ROTAÇÃO
+================================================================ */
+function shuffle(arr){ return arr.sort(()=>Math.random()-0.5); }
+
+async function fetchHTML(url){
+    const enc = encodeURIComponent(url);
+    const proxies = shuffle([...proxyState]).sort((a,b)=>b.score-a.score);
+
+    for (const p of proxies){
+        if(Date.now() < p.ban) continue;
+
+        try {
+            const start = performance.now();
+            log("[TEST] " + p.url);
+
+            const r = await Promise.race([
+                fetch(p.url + enc),
+                new Promise((_,rej)=>setTimeout(()=>rej("timeout"),5000))
+            ]);
+
+            if(!r.ok){ continue; }
+
+            const ms = Math.round(performance.now() - start);
+            p.last = ms;
+            p.score += 3;
+            p.fail = 0;
+
+            log("[OK] " + p.url + " ("+ms+"ms)");
+
+            return await r.text();
+
+        } catch(e){
+            p.fail++;
+            p.score -= 10;
+            if(p.fail>=3){
+                p.ban = Date.now() + 5*60*1000;
+                log("[BAN] " + p.url);
+            }
+        }
+    }
+
+    log("[ERRO] Nenhuma proxy disponível");
+    return null;
+}
+
+/* ================================================================
+   CLASSIFICAÇÃO DE LINKS
+================================================================ */
+function classify(url){
+    const u = url.toLowerCase();
+
+    if(u.endsWith(".pdf") || u.endsWith(".txt") || u.endsWith(".doc") ||
+       u.endsWith(".docx") || u.endsWith(".zip") || u.endsWith(".rar"))
+        return "doc";
+
+    if(u.match(/\.(jpg|jpeg|png|gif|svg|mp4|mp3|webm)$/))
+        return "media";
+
+    if(u.includes("facebook")||u.includes("instagram")||u.includes("tiktok"))
+        return "social";
+
+    if(u.includes("mailto:")||u.includes("tel:"))
+        return "contact";
+
+    if(u.includes("/api/") || u.endsWith(".json") || u.endsWith(".xml"))
+        return "api";
+
+    if(url.startsWith(root)) return "internal";
+
+    return "external";
+}
+
+function addItem(url, type){
+    if(results.some(r=>r.url===url)) return;
+
+    results.push({ url, type });
+
+    document.getElementById("results").innerHTML += `
+        <div class="result-item">${url}
+            <span class="tag tag-${type}">${type}</span>
+        </div>
+    `;
+}
+
+/* ================================================================
+   EXTRAÇÃO
+================================================================ */
+function extractEmails(text){
+    return text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi) || [];
+}
+function extractPhones(text){
+    return text.match(/\+?[0-9][0-9 \-]{6,}/g) || [];
+}
+
+/* ================================================================
+   CRAWLER – 4 NÍVEIS (SEGURO)
+================================================================ */
+async function crawl(url, depth=0){
+    if(depth>3) return;
+    if(visited.has(url)) return;
+
+    visited.add(url);
+    log("[CRAWL] " + url);
+
+    const html = await fetchHTML(url);
+    if(!html) return;
+
+    const doc = new DOMParser().parseFromString(html,"text/html");
+    const text = doc.body.innerText || "";
+
+    extractEmails(text).forEach(e=>addItem("mailto:"+e,"contact"));
+    extractPhones(text).forEach(p=>addItem("tel:"+p,"contact"));
+
+    const links = [...doc.querySelectorAll("a[href], img[src], script[src], link[href]")];
+
+    for(const el of links){
+        const raw = el.href || el.src || el.getAttribute("href");
+        if(!raw) continue;
+
+        try {
+            const abs = new URL(raw, url).href;
+            addItem(abs, classify(abs));
+
+            if(abs.startsWith(root)){
+                await crawl(abs, depth+1);
+            }
+
+        } catch(e){}
+    }
+}
+
+/* ================================================================
+   RESOLUÇÃO DE IP
+================================================================ */
+async function resolveIP(domain){
+    try{
+        const g = await fetch(`https://dns.google/resolve?name=${domain}&type=A`);
+        const j = await g.json();
+        if(j.Answer){
+            const A = j.Answer.find(a=>a.type===1);
+            if(A) return A.data;
+        }
+    }catch(e){}
+
+    try{
+        const c = await fetch(`https://cloudflare-dns.com/dns-query?name=${domain}&type=A`,{
+            headers:{"accept":"application/dns-json"}
+        });
+        const j = await c.json();
+        if(j.Answer){
+            const A = j.Answer.find(a=>a.type===1);
+            if(A) return A.data;
+        }
+    }catch(e){}
+
+    return null;
+}
+
+async function huntIP(url){
+    const host = new URL(url).hostname;
+    const ip = await resolveIP(host);
+
+    if(!ip){
+        log("[IP] Não encontrado.");
+        return;
+    }
+
+    document.getElementById("ipinfo").innerHTML = `
+        <b>IP:</b> ${ip}<br>
+        <a target="_blank" href="https://www.shodan.io/host/${ip}">Shodan</a> |
+        <a target="_blank" href="https://search.censys.io/hosts/${ip}">Censys</a> |
+        <a target="_blank" href="https://www.virustotal.com/gui/ip-address/${ip}">VirusTotal</a> |
+        <a target="_blank" href="https://ipinfo.io/${ip}">IPInfo</a> |
+        <a target="_blank" href="https://who.is/whois-ip/ip-address/${ip}">WHOIS</a>
+    `;
+}
+
+/* ================================================================
+   GRÁFICO
+================================================================ */
+function drawChart(){
+    const ctx = document.getElementById("chart").getContext("2d");
+    ctx.clearRect(0,0,400,180);
+
+    const counts = results.reduce((acc,r)=>{
+        acc[r.type] = (acc[r.type]||0)+1;
+        return acc;
+    },{});
+
+    const keys = Object.keys(counts);
+    const max = Math.max(...Object.values(counts),1);
+
+    keys.forEach((k,i)=>{
+        ctx.fillStyle="#00eaff";
+        const h = (counts[k]/max) * 150;
+        ctx.fillRect(20+i*60,170-h,40,h);
+        ctx.fillText(k,20+i*60,175);
+    });
+}
+
+/* ================================================================
+   EXPORTAÇÃO
+================================================================ */
+function dl(name, content){
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([content]));
+    a.download = name;
+    a.click();
+}
+
+function exportTXT(){ dl("scan.txt", results.map(r=>`${r.type}: ${r.url}`).join("\n")); }
+function exportCSV(){ dl("scan.csv", results.map(r=>`${r.type},${r.url}`).join("\n")); }
+function exportJSON(){ dl("scan.json", JSON.stringify(results,null,2)); }
+
+/* ================================================================
+   START
+================================================================ */
+async function start(){
+    root = document.getElementById("url").value.trim();
+    if(!root) return alert("Insere URL");
+
+    clearAll();
+
+    log("[START] Iniciando...");
+    await huntIP(root);
+    await crawl(root);
+
+    drawChart();
+    log("[DONE] Finalizado.");
+}
+
+function clearAll(){
+    visited.clear();
+    results = [];
+    document.getElementById("results").innerHTML="";
+    document.getElementById("ipinfo").innerHTML="";
+    document.getElementById("log").textContent="[READY] Sistema iniciado.";
+    drawChart();
+}
+
+</script>
+<radape>
+<p>copyright mcegonha 2025 todos os direitos reservados</p>
+</rodape>
+</body>
+</html>
