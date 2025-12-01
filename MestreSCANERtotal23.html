@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>ULTIMATE SCRAPER 2025 – GOD MODE</title>
+
+<style>
+body {
+    background:#050505;
+    color:#00ff99;
+    font-family: Consolas, monospace;
+}
+h1 {
+    color:#00eaff;
+    text-shadow:0 0 10px #00eaff;
+    font-size:30px;
+}
+.box {
+    background:#0f0f0f;
+    border:1px solid #1f1f1f;
+    padding:15px;
+    margin-bottom:20px;
+    border-radius:8px;
+}
+button{
+    padding:10px 15px;
+    border:0;
+    background:#00ccff;
+    cursor:pointer;
+    margin-right:10px;
+    font-weight:bold;
+}
+button:hover{ background:#00ffff; }
+input{
+    padding:8px;
+    width:60%;
+    background:#000;
+    border:1px solid #00ff99;
+    color:#0f0;
+}
+pre{
+    background:#000;
+    border:1px solid #0f0;
+    padding:12px;
+    height:220px;
+    overflow:auto;
+}
+.result-item{
+    padding:8px;
+    border-bottom:1px solid #222;
+    background:#0d0d0d;
+}
+.tag{
+    padding:3px 6px;
+    margin-left:8px;
+    border-radius:3px;
+    font-size:11px;
+}
+.tag-internal { background:#0044ff; color:white; }
+.tag-external { background:#ff5500; color:white; }
+.tag-doc      { background:#cc00cc; color:white; }
+.tag-media    { background:#0099cc; color:white; }
+.tag-contact  { background:#00bb55; color:white; }
+.tag-social   { background:#ffaa00; color:white; }
+.tag-api      { background:#aa00ff; color:white; }
+.tag-vuln     { background:#ff0000; color:white; }
+.tag-info     { background:#666; color:white; }
+.ip-box {
+    padding:10px;
+    background:#001a1a;
+    border:1px solid #00ffaa;
+    margin-bottom:12px;
+}
+a { color:#00eaff; }
+a:hover { color:#ff0; }
+</style>
+</head>
+
+<body>
+
+<h1>ULTIMATE SCRAPER 2025 – GOD MODE</h1>
+
+<div class="box">
+    <input id="url" placeholder="https://exemplo.com">
+    <button onclick="start()">INICIAR</button>
+    <button onclick="exportTXT()">TXT</button>
+    <button onclick="exportJSON()">JSON</button>
+    <button onclick="exportCSV()">CSV</button>
+    <button onclick="clearAll()">Limpar</button>
+</div>
+
+<div class="box">
+    <h3>Console:</h3>
+    <pre id="log">[READY] Sistema iniciado.</pre>
+</div>
+
+<div class="box">
+    <h3>IP & Info:</h3>
+    <div id="ipinfo"></div>
+</div>
+
+<div class="box">
+    <h3>Resultados:</h3>
+    <div id="results"></div>
+</div>
+
+<script>
+
+/* ----------------------------------------- */
+/*  SECTION 1 — VARIÁVEIS GLOBAIS            */
+/* ----------------------------------------- */
+
+let visited = new Set();
+let results = [];
+let root = "";
+
+/* ----------------------------------------- */
+/*  SECTION 2 — PROXIES DE BYPASS CORS       */
+/* ----------------------------------------- */
+
+const proxies = [
+    "https://corsproxy.io/?",
+    "https://api.allorigins.win/raw?url=",
+    "https://thingproxy.freeboard.io/fetch/",
+    "https://api.codetabs.com/v1/proxy?quest=",
+    "https://mocors.vercel.app/api?url=",
+    "https://cors.isomorphic-git.org/?url="
+];
+
+/* ----------------------------------------- */
+/*  LOGGER                                   */
+/* ----------------------------------------- */
+function log(msg){
+    const l = document.getElementById("log");
+    l.textContent += "\n" + msg;
+    l.scrollTop = l.scrollHeight;
+}
+
+/* ----------------------------------------- */
+/*  UTILS                                    */
+/* ----------------------------------------- */
+
+const clean = v => v.replace(/#.*/,'').trim();
+
+function addItem(url, type){
+    if(results.some(r=>r.url===url)) return;
+
+    results.push({ url, type });
+
+    document.getElementById("results").innerHTML += `
+        <div class="result-item">${url}
+            <span class="tag tag-${type}">${type}</span>
+        </div>
+    `;
+}
+
+function classify(url){
+    url = url.toLowerCase();
+
+    if (url.match(/\.(pdf|txt|doc|docx|zip|tar|gz|rar|7z)$/)) return "doc";
+    if (url.match(/\.(jpg|jpeg|png|gif|svg|webp|mp4|mp3|wav|ogg|webm)$/))
+        return "media";
+    if (url.match(/mailto:|@/)) return "contact";
+    if (url.match(/tel:/)) return "contact";
+    if (url.match(/(facebook|instagram|tiktok|youtube|wa.me|telegram|whatsapp)/))
+        return "social";
+    if (url.includes("/api/") || url.endsWith(".json") || url.endsWith(".xml"))
+        return "api";
+
+    if (url.startsWith(root)) return "internal";
+    return "external";
+}
+
+/* ----------------------------------------- */
+/*   FETCH COM PROXIES                       */
+/* ----------------------------------------- */
+
+async function fetchPage(url){
+    const enc = encodeURIComponent(url);
+
+    for (let p of proxies){
+        try{
+            const r = await fetch(p + enc);
+            if(r.ok){
+                log("[PROXY] Usando: " + p);
+                return await r.text();
+            }
+        }catch(e){}
+    }
+    log("[ERRO] Todas as proxies falharam.");
+    return null;
+}
+
+/* ----------------------------------------- */
+/*   EXTRAÇÃO DE LINKS / TEXTOS / CONTACTOS  */
+/* ----------------------------------------- */
+
+async function extract(html, base){
+    const doc = new DOMParser().parseFromString(html, "text/html");
+
+    const links = [
+        ...doc.querySelectorAll("a[href]"),
+        ...doc.querySelectorAll("img[src]"),
+        ...doc.querySelectorAll("script[src]"),
+        ...doc.querySelectorAll("link[href]")
+    ];
+
+    links.forEach(el=>{
+        const raw = el.href || el.src || el.getAttribute("href");
+        if(!raw) return;
+
+        try{
+            const abs = clean(new URL(raw, base).href);
+            const type = classify(abs);
+            addItem(abs, type);
+        }catch(e){}
+    });
+
+    /* CONTACT HUNTER */
+    const txt = doc.body.innerText || "";
+
+    const emails = txt.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi) || [];
+    emails.forEach(e => addItem("mailto:"+e, "contact"));
+
+    const phones = txt.match(/\+?[0-9][0-9 \-]{6,}/g) || [];
+    phones.forEach(t => addItem("tel:"+t.trim(), "contact"));
+
+    /* CMS DETECT */
+    if(html.includes("wp-content")) addItem(base+"wp-admin", "vuln");
+    if(html.includes("joomla"))     addItem(base+"administrator", "vuln");
+    if(html.includes("drupal"))     addItem(base+"user/login", "vuln");
+
+    /* VULNERABILIDADES COMUNS */
+    [
+        "/admin", "/login", "/backup.zip", "/old/",
+        "/test/", "/dev/", "/phpinfo.php", "/server-status"
+    ].forEach(path => addItem(base+path, "vuln"));
+}
+
+/* ----------------------------------------- */
+/*  CRAWLER RECURSIVO                        */
+/* ----------------------------------------- */
+
+async function crawl(url, depth=0){
+    url = clean(url);
+
+    if(depth > 2) return;  // LIMIT 3 níveis
+    if(visited.has(url)) return;
+
+    visited.add(url);
+    log("[CRAWL] " + url);
+
+    const html = await fetchPage(url);
+    if(!html){
+        log("[ERRO] Falhou: " + url);
+        return;
+    }
+
+    await extract(html, url);
+
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const anchors = [...doc.querySelectorAll("a[href]")];
+
+    for(const a of anchors){
+        try{
+            const next = clean(new URL(a.href, url).href);
+            if(next.startsWith(root)){
+                await crawl(next, depth + 1);
+            }
+        } catch(e){}
+    }
+}
+
+/* ----------------------------------------- */
+/*   IP HUNTER PRO                           */
+/* ----------------------------------------- */
+
+async function resolveIP(domain){
+    const providers = [
+        `https://dns.google/resolve?name=${domain}&type=A`,
+        `https://cloudflare-dns.com/dns-query?name=${domain}&type=A`
+    ];
+
+    for (const p of providers){
+        try{
+            const r = await fetch(p, {
+                headers:{ "accept":"application/dns-json" }
+            });
+            const j = await r.json();
+
+            if(j.Answer){
+                const A = j.Answer.find(e => e.type === 1);
+                if(A) return A.data;
+            }
+        }catch(e){}
+    }
+    return null;
+}
+
+async function huntIP(url){
+    const host = new URL(url).hostname;
+
+    log("[IP] A resolver: " + host);
+
+    const ip = await resolveIP(host);
+    if(!ip){
+        log("[IP] Falhou.");
+        return;
+    }
+
+    log("[IP] Encontrado: " + ip);
+
+    document.getElementById("ipinfo").innerHTML = `
+        <div class="ip-box">
+            <b>IP:</b> ${ip}<br>
+            <a target="_blank" href="https://www.shodan.io/host/${ip}">Shodan</a> |
+            <a target="_blank" href="https://search.censys.io/hosts/${ip}">Censys</a> |
+            <a target="_blank" href="https://www.virustotal.com/gui/ip-address/${ip}">VirusTotal</a> |
+            <a target="_blank" href="https://ipinfo.io/${ip}">IPInfo</a> |
+            <a target="_blank" href="https://who.is/whois-ip/ip-address/${ip}">WHOIS</a>
+        </div>
+    `;
+}
+
+/* ----------------------------------------- */
+/*  EXPORTAÇÃO                               */
+/* ----------------------------------------- */
+
+function exportTXT(){
+    const txt = results.map(r => `${r.type}: ${r.url}`).join("\n");
+    dl("scan.txt", txt);
+}
+function exportJSON(){
+    dl("scan.json", JSON.stringify(results, null, 2));
+}
+function exportCSV(){
+    const csv = results.map(r => `${r.type},${r.url}`).join("\n");
+    dl("scan.csv", csv);
+}
+
+function dl(name, content){
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([content]));
+    a.download = name;
+    a.click();
+}
+
+/* ----------------------------------------- */
+/*  START                                    */
+/* ----------------------------------------- */
+
+async function start(){
+    root = clean(document.getElementById("url").value);
+    if(!root) return alert("Insere URL");
+
+    clearAll();
+
+    log("[START] Iniciando scan...");
+    await huntIP(root);
+
+    await crawl(root);
+    log("[DONE] Finalizado.");
+}
+
+function clearAll(){
+    visited.clear();
+    results = [];
+    document.getElementById("results").innerHTML="";
+    document.getElementById("ipinfo").innerHTML="";
+    document.getElementById("log").textContent="[READY] Sistema iniciado.";
+}
+
+</script>
+<rodape>
+<p>copyright mcegonha 2025 todos os direitos reservados</p>
+<p>Abrir server por ip==http://ip</p>
+
+</rodape>
+</body>
+</html>
+
+
+
