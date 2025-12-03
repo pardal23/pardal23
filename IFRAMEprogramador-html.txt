@@ -1,0 +1,81 @@
+<iframe 
+  style="width:100%; max-width:360px; height:380px; border:none; margin:auto; display:block; border-radius:15px; overflow:hidden;"
+  srcdoc="
+  <html>
+  <head>
+  <style>
+    body {
+      margin:0;
+      background: radial-gradient(circle, #00111f, #000000);
+      font-family: Arial, sans-serif;
+      text-align: center;
+      color: white;
+    }
+
+    #aura-container {
+      width: 220px;
+      height: 220px;
+      margin: 40px auto;
+      position: relative;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    #aura {
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle, #ffffff, #66ccff);
+      border-radius: 50%;
+      margin: 0 auto;
+      box-shadow: 
+          0 0 25px #66ccff,
+          0 0 45px #66ccff,
+          0 0 70px #66ccff;
+      transition: 1.2s;
+    }
+
+    #aura-texto {
+      margin-top: 15px;
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: bold;
+      text-shadow: 0 0 8px #66ccff;
+    }
+  </style>
+  </head>
+
+  <body>
+    <div id='aura-container'>
+      <div id='aura'></div>
+      <div id='aura-texto'>Clique para mudar a aura</div>
+    </div>
+
+  <script>
+    const aura = document.getElementById('aura');
+    const texto = document.getElementById('aura-texto');
+
+    const cores = [
+      {grad:'radial-gradient(circle, #fff0f6, #ff4da6)', brilho:'#ff4da6', texto:'Aura do Amor'},
+      {grad:'radial-gradient(circle, #e0ffe0, #33cc33)', brilho:'#33cc33', texto:'Aura da Cura'},
+      {grad:'radial-gradient(circle, #e8e8ff, #4444ff)', brilho:'#4444ff', texto:'Aura da Proteção'},
+      {grad:'radial-gradient(circle, #e6ffff, #00cccc)', brilho:'#00cccc', texto:'Aura da Paz'},
+      {grad:'radial-gradient(circle, #ffffff, #ffcc00)', brilho:'#ffcc00', texto:'Aura Divina'},
+    ];
+
+    let index = 0;
+
+    aura.addEventListener('click', function(){
+      index = (index + 1) % cores.length;
+      aura.style.background = cores[index].grad;
+      aura.style.boxShadow = 
+        '0 0 25px ' + cores[index].brilho + ',' +
+        '0 0 50px ' + cores[index].brilho + ',' +
+        '0 0 80px ' + cores[index].brilho;
+      texto.innerHTML = cores[index].texto;
+    });
+  </script>
+
+  </body>
+  </html>
+">
+</iframe>
