@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Pesquisa Ultra Avançada</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  input { width: 80%; padding: 8px; font-size: 16px; }
+  select, button { padding: 8px; font-size: 16px; margin-top: 10px; }
+  .iframe-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+  iframe { width: 48%; height: 400px; border: 1px solid #ccc; }
+</style>
+</head>
+<body>
+
+<h2>Pesquisa Ultra Avançada</h2>
+
+<input type="text" id="searchInput" value="{(^|\\.(`))documentos-index/ EXEMPLO==minha pesquisa é feita aqui}">
+<br>
+
+<label>Escolha motores de pesquisa (pode selecionar mais de um):</label>
+<br>
+<select id="searchEngine" multiple size="8">
+  <option value="https://www.google.com/search?q=">Google</option>
+  <option value="https://www.bing.com/search?q=">Bing</option>
+  <option value="https://yandex.com/search/?text=">Yandex</option>
+  <option value="https://www.start.duckduckgo.com/?q=">DuckDuckGo</option>
+  <option value="https://www.baidu.com/s?wd=">Baidu</option>
+  <option value="https://dzen.ru/?yredirect=true&text=">Dzen.ru</option>
+  <option value="https://www.justdial.com/search?q=">JustDial</option>
+  <option value="https://m.youtube.com/results?search_query=">YouTube</option>
+  <option value="https://m.facebook.com/search/top/?q=">Facebook</option>
+  <option value="https://www.startpage.com/sp/search?q=">StartPage</option>
+  <option value="https://jesusempoesia.blogspot.com/p/appi-motores-de-busca-world.html/search?q=">StartPage Jesus poesia</option>
+</select>
+
+<br>
+<button onclick="performSearch()">Pesquisar</button>
+
+<div class="iframe-container" id="resultsContainer"></div>
+
+<script>
+function performSearch() {
+  const query = encodeURIComponent(document.getElementById('searchInput').value);
+  const engines = Array.from(document.getElementById('searchEngine').selectedOptions).map(opt => opt.value);
+  const container = document.getElementById('resultsContainer');
+  
+  container.innerHTML = ''; // Limpa resultados anteriores
+
+  if (engines.length === 0) {
+    alert('Selecione pelo menos um motor de pesquisa!');
+    return;
+  }
+
+  engines.forEach(url => {
+    const iframe = document.createElement('iframe');
+    iframe.src = url + query;
+    container.appendChild(iframe);
+  });
+}
+</script>
+
+</body>
+</html>
+
