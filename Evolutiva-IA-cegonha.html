@@ -1,0 +1,289 @@
+
+
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IA Cegonha Evolutiva 9.0 🌿🕊️</title>
+<style>
+    body { margin: 0; background-color: #f0f8ff; font-family: Arial; display: flex; flex-direction: column; align-items: center; }
+    #container { position: relative; width: 100%; height: 50vh; border: 1px solid #ccc; margin-top: 20px; overflow: hidden; }
+    #stork { position: absolute; width: 120px; transition: transform 1s ease; cursor: pointer; }
+    #input-container { margin-top: 20px; text-align: center; width: 90%; max-width: 700px; }
+    #user-input { padding: 10px; width: 70%; border-radius: 8px; font-size: 16px; }
+    #ask-button { padding: 10px 20px; margin-left: 10px; font-size: 16px; }
+    #response { margin-top: 20px; width: 100%; font-size: 18px; color: #333; padding: 15px; background: #ffffffd0; border-radius: 10px; min-height: 80px; }
+    canvas { border: 1px solid #999; background: #f9f9ff; width: 100%; height: 100%; }
+    #audio-controls { margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<h1>Cegonha Evolutiva 9.0</h1>
+
+<div style="position: relative; width: 100%; text-align: center; margin: 10px 0; font-family: 'Georgia', serif;">
+    
+    <div style="font-size: 14px; color: #555; margin-bottom: 6px;">
+        Cegonha IA — a arte, a espiritualidade, a poesia e o amor juntos na alma
+ <br>첷🌺 첷🌺 첷 🌺첷 🌺첷 🌺첷 🌺첷🌺 첷🌺 첷🌺 첷🌺 첷 🌺첷🌺 첷🌺 첷🌺 첷 🌺첷🌺 첷 🌺첷🌺 첷🌺 첷
+    </div>
+
+   
+
+
+<div id="container">
+    <canvas id="brainCanvas"></canvas>
+    <img id="stork" src="https://cdn.pixabay.com/photo/2023/03/15/17/49/white-stork-7855080_1280.jpg" alt="첷🌺 첷🌺 첷 🌺첷 🌺첷 🌺첷 🌺첷🌺 첷🌺 첷🌺 첷🌺 첷 🌺첷🌺 첷🌺 첷🌺 첷 🌺첷🌺 첷 🌺첷🌺 첷🌺 첷">
+</div>
+
+<div id="input-container">
+    <input id="user-input" type="text" placeholder="Escreva algo...">
+    <button id="ask-button">Perguntar</button>
+    <div id="response"></div>
+
+    <!-- Cegonha clicável abaixo da resposta -->
+    <div id="stork-response-container" style="text-align:center; margin-top:10px;">
+       <p>Raciocinio da Cegonha! Clica em mim.<br> <img id="stork-response" src="첷 첷 첷 첷 첷 첷 첷" 
+             alt="첷🌺 첷🌺 첷 🌺첷 🌺첷 🌺첷 🌺첷🌺 첷🌺 첷🌺 첷🌺 첷 🌺첷🌺 첷🌺 첷🌺 첷 🌺첷🌺 첷 🌺첷🌺 첷🌺 첷" width="80px" height="80px" style="cursor:pointer;"></p>
+    </div>
+
+    <div id="audio-controls">
+        <button id="play-audio">▶️ Iniciar Música</button>
+        <button id="pause-audio">⏸️ Parar Música</button>
+        <input type="range" id="volume-control" min="0" max="1" step="0.01" value="0.5">
+    </div>
+</div>
+
+<audio id="stork-audio" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+
+<script>
+/**********************
+  ELEMENTOS
+***********************/
+const canvas = document.getElementById("brainCanvas");
+const ctx = canvas.getContext("2d");
+const stork = document.getElementById("stork");
+const userInput = document.getElementById("user-input");
+const askButton = document.getElementById("ask-button");
+const responseDiv = document.getElementById("response");
+const container = document.getElementById("container");
+canvas.width = container.clientWidth;
+canvas.height = container.clientHeight;
+
+const audio = document.getElementById("stork-audio");
+document.getElementById("play-audio").addEventListener("click",()=>audio.play());
+document.getElementById("pause-audio").addEventListener("click",()=>audio.pause());
+document.getElementById("volume-control").addEventListener("input",(e)=>audio.volume=e.target.value);
+
+let lastQuestion = "";
+let memory = [];
+
+/**********************
+  DADOS ORIGINAIS
+***********************/
+const energyColors = ["dourado","azul celeste","violeta místico","verde cura","prateado lunar","rosa suave","laranja criativo","turquesa espiritual","índigo profundo","vermelho ancestral"];
+const archetypes = ["A Criança Sagrada","O Curandeiro Interior","A Luz Oculta","O Guardião da Porta","A Voz Silenciosa","O Sonhador Desperto","O Coração Antigo","A Semente Estelar"];
+const symbolicVisions = ["um lago espelhado com respostas escondidas","uma chama pequena mas persistente no peito","um corredor entre luz e sombra","uma ponte suspensa entre duas nuvens antigas","um jardim onde emoções crescem como flores","um rio que muda de cor quando pensa","uma estrela a piscar no ritmo do seu coração"];
+const narrativeLines = ["Era uma vez, nas alturas onde o vento guarda segredos, uma pergunta despertou asas de luz…","Recordo-me de uma manhã celestial em que uma alma curiosa fez algo parecido ao que perguntaste agora…","Há muito tempo, nas primeiras nuvens do amanhecer espiritual, ouvi um eco parecido ao da tua pergunta…","Numa viagem entre mundos, encontrei um brilho semelhante ao que existe nas tuas palavras…"];
+const stopwords = ["a","o","as","os","um","uma","de","da","do","das","dos","em","no","na","nos","nas","ao","à","há","faz","verso","um","uma","sobre","para","por","e","ou","se","que"];
+
+/**********************
+  EMOÇÕES
+***********************/
+function detectEmotion(text){
+    const lower = text.toLowerCase();
+    if(lower.includes("medo")||lower.includes("ansioso")||lower.includes("preocup")) return "uma leve inquietação no seu coração";
+    if(lower.includes("feliz")||lower.includes("bom")||lower.includes("alegre")) return "uma luz quente e alegre nas suas palavras";
+    if(lower.includes("triste")||lower.includes("dor")||lower.includes("perdido")) return "uma sombra suave, como quem busca conforto";
+    return "uma energia curiosa a querer entender mais";
+}
+
+/**********************
+  BRAIN & MEMÓRIA
+***********************/
+let cegonhaBrain = { words:{}, concepts:{}, links:[], maturity:0, evolutionLog:[] };
+if(localStorage.getItem("cegonhaBrain")){ try{ cegonhaBrain = JSON.parse(localStorage.getItem("cegonhaBrain")); }catch(e){} }
+
+let wordVerses = JSON.parse(localStorage.getItem("wordVersesMemory")) || {
+    "benfica":["Nos campos do nosso coração, o Benfica brilha, com a paixão que nunca se esvazia.","Na vitória ou na dor, o Benfica é amor, sempre a brilhar na nossa memória."],
+    "amor":["O amor é a luz que ilumina o caminho, em cada passo, um carinho.","Como flores que brotam no verão, o amor cresce no coração."],
+    "esperança":["A esperança é um sol que nunca se apaga, mesmo nas noites mais escuras, ela se propaga."]
+};
+function saveVerseMemory(){ localStorage.setItem("wordVersesMemory",JSON.stringify(wordVerses)); }
+
+function readEnergy(q){
+    return {
+        color: energyColors[Math.floor(Math.random()*energyColors.length)],
+        archetype: archetypes[Math.floor(Math.random()*archetypes.length)],
+        vision: symbolicVisions[Math.floor(Math.random()*symbolicVisions.length)],
+        emotion: detectEmotion(q)
+    };
+}
+function narrative(){ return narrativeLines[Math.floor(Math.random()*narrativeLines.length)]; }
+function cegonhaDeepThought(){ return "💭 Aqui está um pensamento profundo para você considerar..."; }
+
+/**********************
+  VERSOS INFINITOS & ÚNICOS
+***********************/
+function generateInfiniteVerse(word){
+    const starts = ["Quando penso em", "Nos cantos do vento vive", "Em noites silenciosas surge","Sob o brilho das estrelas desperta","No coração do tempo vibra","Entre sonhos ocultos dança","Nos ecos do universo canta"];
+    const middles = ["um brilho que ninguém consegue apagar","uma memória que respira vida","um toque suave que se entranha na alma","uma força que renasce lentamente","uma história que insiste em ser contada"];
+    const ends = ["e o mundo parece mais leve.","e tudo encontra um novo significado.","e a alma sorri em silêncio.","e nasce um novo caminho.","e tudo volta a florescer."];
+    return `${starts[Math.random()*starts.length|0]} ${word}, ${middles[Math.random()*middles.length|0]} ${ends[Math.random()*ends.length|0]}`;
+}
+
+function getUniqueVerse(word){
+    if(!wordVerses[word]) return null;
+    if(!window.verseHistory) window.verseHistory={};
+    if(!window.verseHistory[word]) window.verseHistory[word]=[];
+    const options = wordVerses[word].filter(v=>!window.verseHistory[word].includes(v));
+    let chosen = options.length>0 ? options[Math.random()*options.length|0] : wordVerses[word][Math.random()*wordVerses[word].length|0];
+    window.verseHistory[word].push(chosen);
+    if(window.verseHistory[word].length>8) window.verseHistory[word].shift();
+    return chosen;
+}
+
+/**********************
+  GERADOR DE RESPOSTAS
+***********************/
+function generateResponse(question){
+    const qLower = question.toLowerCase();
+    const energy = readEnergy(question);
+    const words = qLower.split(/[\s,.!?;:"()]+/g);
+
+    let response = `<b>🕊️ Cegonha Evolutiva:</b><br><br>`;
+    response += narrative() + "<br><br>";
+    if(lastQuestion) response += `Recordo quando me falaste sobre “${lastQuestion}”.<br><br>`;
+    response += `Ao ouvir (“<i>${question}</i>”), senti ${energy.emotion}.<br><br>`;
+    response += `Uma luz <b>${energy.color}</b> fluía através do arquétipo <b>${energy.archetype}</b> que envolveu as tuas palavras.<br><br>`;
+    response += `E visualizei <i>${energy.vision}</i>.<br><br>`;
+
+    if(qLower.includes("faz um verso sobre") || qLower.includes("cria um verso sobre")){
+        let target = qLower.replace("faz um verso sobre","").replace("cria um verso sobre","").trim();
+        if(!stopwords.includes(target) && target.length>2){
+            const auto = generateInfiniteVerse(target);
+            if(!wordVerses[target]) wordVerses[target]=[];
+            wordVerses[target].push(auto); saveVerseMemory();
+            response += `<b>🌟 Verso criado:</b> “${auto}”<br><br>`;
+        }
+    }
+
+    words.forEach(word=>{
+        if(word.length<2) return;
+        if(stopwords.includes(word)) return;
+        if(wordVerses[word]){
+            const unique = getUniqueVerse(word);
+            if(unique) response += `<b>✨ Verso para "${word}":</b> “${unique}”<br><br>`;
+        }
+    });
+
+    words.forEach(word=>{
+        if(word.length<3) return;
+        if(stopwords.includes(word)) return;
+        if(!wordVerses[word]){
+            const learned = generateInfiniteVerse(word);
+            wordVerses[word] = [learned]; saveVerseMemory();
+            response += `<b>🪶 Nova palavra aprendida:</b> “${word}”<br>“${learned}”<br><br>`;
+        }
+    });
+
+    response += `💖 A tua jornada importa.<br><br>` + cegonhaDeepThought();
+    lastQuestion = question;
+    return response;
+}
+
+/**********************
+  CÉREBRO ANIMADO COM CEGONHA
+***********************/
+let nodes={}; // palavra => {x,y,vx,vy,color}
+let storkTarget=null;
+
+function updateBrainNodes(){
+    Object.keys(wordVerses).forEach(word=>{
+        if(!nodes[word]){
+            nodes[word]={x:Math.random()*canvas.width, y:Math.random()*canvas.height,
+                         vx:(Math.random()-0.5)*0.5, vy:(Math.random()-0.5)*0.5,
+                         color:energyColors[Math.floor(Math.random()*energyColors.length)]};
+        }
+    });
+    if(!storkTarget || Math.random()<0.005){
+        const keys = Object.keys(nodes);
+        storkTarget = keys[Math.floor(Math.random()*keys.length)];
+    }
+}
+
+function moveStorkToTarget(){
+    if(!storkTarget) return;
+    const n = nodes[storkTarget];
+    stork.style.transform = `translate(${n.x}px,${n.y}px)`;
+}
+
+function drawBrain(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    updateBrainNodes();
+    Object.values(nodes).forEach(n=>{
+        n.x+=n.vx; n.y+=n.vy;
+        if(n.x<0||n.x>canvas.width) n.vx*=-1;
+        if(n.y<0||n.y>canvas.height) n.vy*=-1;
+    });
+
+    const words=Object.keys(nodes);
+    for(let i=0;i<words.length;i++){
+        for(let j=i+1;j<words.length;j++){
+            const n1=nodes[words[i]], n2=nodes[words[j]];
+            const dx=n2.x-n1.x, dy=n2.y-n1.y, dist=Math.sqrt(dx*dx+dy*dy);
+            if(dist<200){
+                ctx.strokeStyle=`rgba(100,100,255,${0.2+Math.random()*0.3})`;
+                ctx.lineWidth=1+Math.random();
+                ctx.beginPath(); ctx.moveTo(n1.x,n1.y); ctx.lineTo(n2.x,n2.y); ctx.stroke();
+            }
+        }
+    }
+
+    Object.keys(nodes).forEach(word=>{
+        const n=nodes[word];
+        ctx.beginPath();
+        ctx.arc(n.x,n.y,6,0,2*Math.PI);
+        ctx.fillStyle=n.color;
+        ctx.fill();
+        ctx.fillStyle="#000"; ctx.font="10px Arial"; ctx.fillText(word,n.x+8,n.y+4);
+    });
+
+    moveStorkToTarget();
+    requestAnimationFrame(drawBrain);
+}
+drawBrain();
+
+/**********************
+  EVENTOS
+***********************/
+askButton.addEventListener("click",()=>{
+    const q = userInput.value.trim();
+    if(!q) return;
+    responseDiv.innerHTML = generateResponse(q);
+    userInput.value="";
+});
+stork.addEventListener("click",()=>{ storkTarget = Object.keys(nodes)[Math.floor(Math.random()*Object.keys(nodes).length)]; });
+
+// NOVA CEGONHA DE RESPOSTA
+const storkResponse = document.getElementById("stork-response");
+storkResponse.addEventListener("click", () => {
+    const keys = Object.keys(nodes);
+    if(keys.length === 0) return;
+    const word = keys[Math.floor(Math.random()*keys.length)];
+    let verse = getUniqueVerse(word);
+    if(!verse){
+        verse = generateInfiniteVerse(word);
+        wordVerses[word] = [verse];
+        saveVerseMemory();
+    }
+    responseDiv.innerHTML += `<br><b>🕊️ Cegonha diz sobre "${word}":</b><br>“${verse}”`;
+});
+</script>
+</body>
+</html>
+
+
+
