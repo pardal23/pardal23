@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Cegonha IDE Offline Avançada</title>
+<style>
+/* ... (Seu CSS original mantido, apenas adicionei algumas classes para o status do localstorage) ... */
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #f0f4f8;
+    text-align: center;
+}
+header {
+    background-color: #4caf50;
+    color: white;
+    padding: 20px;
+    font-size: 28px;
+    font-weight: bold;
+}
+.editor {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 20px;
+}
+textarea {
+    width: 30%;
+    height: 250px;
+    font-family: monospace;
+    font-size: 14px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background: white;
+    resize: vertical;
+}
+button {
+    padding: 10px 20px;
+    margin: 5px;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+button:hover {
+    background-color: #388e3c;
+}
+iframe {
+    width: 90%;
+    height: 500px;
+    border: 2px solid #4caf50;
+    border-radius: 10px;
+    background: white;
+    margin-top: 20px;
+}
+input[type="file"] {
+    padding: 10px;
+    margin: 10px;
+}
+#fileList {
+    margin: 20px auto;
+    padding: 10px;
+    border: 2px dashed #4caf50;
+    width: 80%;
+    min-height: 50px;
+    border-radius: 8px;
+    background: #eaf5ea;
+    text-align: left;
+}
+#fileList div {
+    margin: 5px 0;
+    padding: 5px;
+    background: #c8f0c8;
+    border-radius: 5px;
+    cursor: pointer;
+}
+#saveStatus {
+    font-size: 12px;
+    color: gray;
+    margin-top: 5px;
+}
+</style>
+</head>
+<body>
+
+<header>Cegonha IDE Offline</header>
+
+<div class="editor">
+    <textarea id="html" placeholder="HTML aqui..."></textarea>
+    <textarea id="css" placeholder="CSS aqui..."></textarea>
+    <textarea id="js" placeholder="JS aqui..."></textarea>
+</div>
+
+<div>
+    <label for="fileUpload">📁 Upload de arquivos (HTML, CSS, JS, imagens ou vídeos):</label>
+    <input type="file" id="fileUpload" multiple>
+</div>
+
+<!-- Div que guarda arquivos uploadados -->
+<div id="fileList">
+    <strong>Arquivos carregados:</strong>
+</div>
+
+<button onclick="executar()">▶️ Executar Código</button>
+<button onclick="limparEditor()">🧹 Limpar Editor</button>
+<button onclick="salvarLocalmente()">💾 Salvar Sessão Manualmente</button>
+<div id="saveStatus"></div>
+
+<iframe id="preview"></iframe>
+
+<script>
+const uploadedFiles = {}; 
+const htmlEditor = document.getElementById("html");
+const cssEditor = document.getElementById("css");
+const jsEditor = document.getElementById("js");
+const saveStatusDiv = document.getElementById("saveStatus");
+
+// --- FUNÇÕES DE PERSISTÊNCIA (localStorage) ---
+
+// Função para salvar automaticamente a cada 2 segundos
+function salvarAutomatico() {
+    setInterval(() => {
+        salvarLocalmente(true); // 'true' para salvar silenciosamente
+    }, 2000); 
+}
+
+// Salva o conteúdo atual dos editores no navegador
+function salvarLocalmente(silent = false) {
+    localStorage.setItem('cegonha_html', htmlEditor.value);
+    localStorage.setItem('cegonha_css', cssEditor.value);
+    localStorage.setItem('cegonha_js', jsEditor.value);
+    if (!silent) {
+        saveStatusDiv.textContent = 'Sessão salva manualmente!';
+        setTimeout(() => saveStatusDiv.textContent = '', 2000);
+    }
+}
+
+// Carrega o conteúdo ao iniciar a página
+function carregarSessao() {
+    htmlEditor.value = localStorage.getItem('cegonha_html') || '<h1>Olá, Mundo!</h1>';
+    cssEditor.value = localStorage.getItem('cegonha_css') || 'h1 { color: purple; text-align: center; }';
+    jsEditor.value = localStorage.getItem('cegonha_js') || 'console.log("Executado!");';
+    executar(); // Executa o código carregado automaticamente
+    salvarAutomatico(); // Inicia o salvamento automático
+}
+
+// --- SUAS FUNÇÕES ORIGINAIS (Melhoradas para usar constantes e localStorage) ---
+
+function executar() {
+    const html = htmlEditor.value;
+    const css = `<style>${cssEditor.value}</style>`;
+    const js = `<script>${jsEditor.value}<\/script>`;
+    const code = html + css + js;
+    const iframe = document.getElementById("preview");
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.open();
+    doc.write(code);
+    doc.close();
+}
+
+function limparEditor() {
+    htmlEditor.value = "";
+    cssEditor.value = "";
+    jsEditor.value = "";
+    localStorage.removeItem('cegonha_html');
+    localStorage.removeItem('cegonha_css');
+    localStorage.removeItem('cegonha_js');
+    executar(); // Limpa o iframe também
+}
+
+// Upload de arquivos e exibição na div (mantido do seu código)
+document.getElementById("fileUpload").addEventListener("change", function(event) {
+    const files = event.target.files;
+    const fileListDiv = document.getElementById("fileList");
+
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const reader = new FileReader();
+        const name = file.name;
+
+        reader.onload = function(e) {
+            const content = e.target.result;
+            uploadedFiles[name] = { content, type: file.type };
+
+            const div = document.createElement("div");
+            div.textContent = name;
+            div.onclick = () => abrirNoIframe(name);
+            fileListDiv.appendChild(div);
+
+            const lower = name.toLowerCase();
+            if (lower.endsWith(".html") || lower.endsWith(".htm")) htmlEditor.value = content;
+            else if (lower.endsWith(".css")) cssEditor.value = content;
+            else if (lower.endsWith(".js")) jsEditor.value = content;
+            
+            // Salva a sessão automaticamente após carregar um ficheiro para o editor
+            salvarLocalmente(true); 
+        };
+
+        if (file.type.startsWith("text") || file.name.toLowerCase().endsWith(".html") || file.name.toLowerCase().endsWith(".css") || file.name.toLowerCase().endsWith(".js")) {
+            reader.readAsText(file);
+        } else {
+            reader.readAsDataURL(file); // imagens e vídeos
+        }
+    }
+});
+
+function abrirNoIframe(name) {
+    const file = uploadedFiles[name];
+    if (!file) return;
+
+    const iframe = document.getElementById("preview");
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+
+    doc.open();
+    if (name.toLowerCase().endsWith(".html") || name.toLowerCase().endsWith(".htm")) {
+        doc.write(file.content);
+    } else if (file.type.startsWith("image/")) {
+        doc.write(`<img src="${file.content}" style="max-width:100%; height:auto;">`);
+    } else if (file.type.startsWith("video/")) {
+        doc.write(`
+            <video controls style="max-width:100%; height:auto;">
+                <source src="${file.content}" type="${file.type}">
+                Seu navegador não suporta vídeo.
+            </video>
+        `);
+    } else {
+        doc.write("<p>Arquivo não suportado para visualização.</p>");
+    }
+    doc.close();
+}
+
+// --- Inicialização ---
+carregarSessao();
+
+</script>
+
+</body>
+</html>
