@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Cegonha Offline v2025</title>
+    <style>
+        body { font-family: sans-serif; background: #000; color: #0f0; text-align: center; padding: 20px; }
+        .box { border: 2px solid #0f0; border-radius: 10px; padding: 20px; max-width: 450px; margin: auto; }
+        textarea { width: 90%; height: 80px; background: #111; color: #fff; border: 1px solid #0f0; margin: 10px 0; }
+        #chat { height: 150px; overflow-y: auto; background: #050505; border: 1px solid #333; margin: 15px 0; padding: 10px; text-align: left; }
+        button { padding: 10px; cursor: pointer; font-weight: bold; width: 45%; margin: 5px; }
+        .btn-a { background: #0f0; color: #000; }
+        .btn-b { background: #00f; color: #fff; border: 1px solid #00f; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h3>LINHA PRIVADA OFFLINE</h3>
+        
+        <button class="btn-a" onclick="criarOferta()">1. GERAR OFERTA (A)</button>
+        <textarea id="output" placeholder="Código gerado aparecerá aqui..."></textarea>
+        
+        <textarea id="input" placeholder="Cole aqui o código do parceiro..."></textarea>
+        <button class="btn-b" onclick="responderOuConectar()">2. VALIDAR / CONECTAR</button>
+
+        <div id="chat"></div>
+        <input type="text" id="msg" placeholder="Mensagem..." style="width:70%; padding:8px;">
+        <button onclick="enviar()" style="width:20%;">OK</button>
+    </div>
+
+<script>
+    let pc = new RTCPeerConnection({ iceServers: [] });
+    let dc;
+
+    // Criar canal de dados
+    function prepararCanal(canal) {
+        dc = canal;
+        dc.onopen = () => log("SISTEMA: CONECTADO COM SUCESSO!");
+        dc.onmessage = e => log("PARCEIRO: " + e.data);
+    }
+
+    pc.ondatachannel = e => prepararCanal(e.channel);
+
+    async function criarOferta() {
+        prepararCanal(pc.createDataChannel("chat"));
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        
+        // Aguarda 2 segundos para o browser "descobrir" o IP local antes de exportar
+        log("SISTEMA: A mapear rede local... aguarde.");
+        setTimeout(() => {
+            document.getElementById('output').value = btoa(JSON.stringify(pc.localDescription));
+            log("SISTEMA: Código PRONTO. Envie ao Dispositivo B.");
+        }, 2000);
+    }
+
+    async function responderOuConectar() {
+        const raw = document.getElementById('input').value;
+        if (!raw) return alert("Cole o código primeiro!");
+        const data = JSON.parse(atob(raw));
+
+        if (data.type === "offer") {
+            await pc.setRemoteDescription(data);
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            
+            setTimeout(() => {
+                document.getElementById('output').value = btoa(JSON.stringify(pc.localDescription));
+                log("SISTEMA: Resposta pronta. Envie de volta ao Dispositivo A.");
+            }, 2000);
+        } else {
+            await pc.setRemoteDescription(data);
+            log("SISTEMA: Sincronização final... aguarde.");
+        }
+    }
+
+    function enviar() {
+        const m = document.getElementById('msg').value;
+        if (dc && dc.readyState === "open") {
+            dc.send(m);
+            log("EU: " + m);
+            document.getElementById('msg').value = "";
+        } else {
+            alert("ERRO: O canal ainda não abriu. Certifique-se de que o Dispositivo A também validou a resposta de B.");
+        }
+    }
+
+    function log(t) {
+        const c = document.getElementById('chat');
+        c.innerHTML += `<div>> ${t}</div>`;
+        c.scrollTop = c.scrollHeight;
+    }
+</script>
+</body>
+</html>
