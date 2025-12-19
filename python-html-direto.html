@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<body>
+
+    <!-- Teste com a tua tag personalizada -->
+    <python>
+        nome = "Super Calculadora"
+        print("<h1>" + nome + "</h1>")
+        
+        a = 500
+        b = 250
+        resultado = a + b
+        
+        print("<p>A soma de <b>", a, "</b> com <b>", b, "</b> é:</p>")
+        print("<h2>", resultado, "</h2><br>")
+        print(23*45)
+        print("<br>Eu sou a maria")
+        print("<br><h3>Deus Jesus em poesis Maria</h3>")
+        print('<img src="https://img.freepik.com/foto-gratis/nina-oracion-concepto-paz-esperanza-suenos_78949-114.jpg?size=626&ext=jpg" width="500px"><br>')
+        print("O CSS DESTE CODIGO DEVE sempre inserir a div python no css")
+        
+
+    </python>
+
+    <script>
+        /**
+         * Super Function Asenic (Async) que cria a lógica da tag <python>
+         */
+        async function bootstrapPython() {
+            const pythonTags = document.querySelectorAll('python');
+
+            for (const tag of pythonTags) {
+                // 1. Extrair o código e limpar espaços/quebras
+                let code = tag.innerHTML.trim();
+                tag.innerHTML = ""; // Limpa o palco para o output
+
+                // 2. Função de Print que aceita múltiplos argumentos e renderiza HTML
+                const print = (...args) => {
+                    const output = args.join(" ");
+                    const container = document.createElement('div');
+                    container.innerHTML = output; // Isto faz o <h1> funcionar!
+                    tag.appendChild(container);
+                };
+
+                try {
+                    // 3. O "Pulo do Gato": Transformar Python em JS sem quebrar a lista de argumentos
+                    let jsCode = code
+                        // Recupera sinais de < e > se o browser os "limpou"
+                        .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+                        // Transforma variáveis (x = 10) em let x = 10;
+                        .replace(/(\w+)\s*=\s*(.*)/g, 'let $1 = $2;')
+                        // Transforma print(a, b, c) em print(a + " " + b + " " + c)
+                        // Resolve o erro "missing ) after argument list"
+                        .replace(/print\(([\s\S]*?)\)/g, (match, args) => {
+                            const parsedArgs = args.split(',').map(arg => arg.trim()).join(' + " " + ');
+                            return `print(${parsedArgs});`;
+                        });
+
+                    // 4. Execução Dinâmica
+                    const runner = new Function('print', `(async () => { ${jsCode} })()`);
+                    await runner(print);
+
+                } catch (err) {
+                    console.error("Falha no Parser:", err);
+                    tag.innerHTML = `<div style="color:red; border:1px solid red; padding:5px;">
+                        <b>Erro de Execução:</b> ${err.message}</div>`;
+                }
+            }
+        }
+
+        // Inicia a inovação
+        window.addEventListener('load', bootstrapPython);
+    </script>
+
+    <style>
+        python { display: block; background: #fff; padding: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        h1 { color: #3776ab; }
+        b { color: #ff9900; }
+        h3{color:orange; text-align:center;}
+       python div { /* Alvo direto nos prints gerados */
+    text-align: center;
+    width: 100%;
+}
+img {
+    display: inline-block;
+    border-radius: 15px; /* Um toque moderno de 2025 */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+h2{color:purple;}
+    </style>
+<python>
+print("olá mundo")
+cars = ["Ford", "Volvo", "BMW"]
+
+print(cars)
+</python>
+
+ <python>
+    print("<h2>Abba o meu objetivo de vida</h2>")
+
+print('<iframe width="510" height="384" src="https://www.youtube.com/embed/8tE0GjSQpes?list=RD8tE0GjSQpes" title="ABBA - The Winner Takes It All (1980)" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>')
+print('EVITAR O COMFLITO ASPAS NO python html')
+
+    </python>
+
+
+</body>
+</html>
