@@ -1,0 +1,382 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Cegonha — Motor Completo</title>
+<style>
+
+h2{text-align:center; color:orange;}
+.maria{text-align:center; color:#9400D3;}
+
+h1{text-align:center; color:#DC143C;}
+.maria1{text-align:center; color:#4B0082;}
+
+
+</style>
+</head>
+<body>
+
+<h2>Gratidão há mae Maria.</h2>
+<div id="conteudo" class="maria">
+<cegonha>
+
+cegonha("Repetir 10x: ")
+cegonha( repetir("Amo Jesus ", 10) )
+cegonha("<br>")
+cegonha('<img src="https://i.pinimg.com/736x/8a/ec/28/8aec283387de5a40a023ab3ab5fecdd9.jpg" width="400px" weight="300px"><br>')
+cegonha("Repetir 7x: ")
+cegonha( repetir("A cruz minha estrada<br>A fé meu caminhar.<br> ", 7) )
+cegonha( repetir("que verdade este estranho estar.<br> ", 7) )
+cegonha("<br>")
+cegonha("Repetir 6x: ")
+cegonha( repetir('<img src="https://i.pinimg.com/736x/99/c6/ff/99c6ff931d7d42a11ab830d975462717.jpg" width="90px" height="70px"><br>', 6) )
+cegonha( repetir('<img src="https://png.pngtree.com/background/20230401/original/pngtree-angel-heaven-dream-advertising-background-picture-image_2249402.jpg" width="90px" height="70px">', 6) )
+
+
+</cegonha>
+<h1>As contas da cegonha.</h1>
+<div id="conteudo1" class="maria1">
+<cegonha>
+a = 23**67/34
+cegonha(a)
+cegonha("<br>")
+cegonha("Seja feliz por favor<br>")
+b = 234*2345/345+98
+cegonha(b)
+cegonha("<br>")
+cegonha("A cegonha deseja que Deus vos abençoe")
+
+</cegonha>
+</div>
+
+
+<script>
+/* ============================================================
+   FUNÇÕES EXTRA — SEGURAS, NÃO MEXEM NO MOTOR
+   ============================================================ */
+
+// Funções de lista
+function soma(arr) {
+    if (!Array.isArray(arr)) return 0;
+    return arr.reduce((a, b) => a + b, 0);
+}
+
+function maximo(arr) {
+    if (!Array.isArray(arr) || arr.length === 0) return 0;
+    return Math.max(...arr);
+}
+
+function minimo(arr) {
+    if (!Array.isArray(arr) || arr.length === 0) return 0;
+    return Math.min(...arr);
+}
+
+function media(arr) {
+    if (!Array.isArray(arr) || arr.length === 0) return 0;
+    return soma(arr) / arr.length;
+}
+
+function len(obj) {
+    if (Array.isArray(obj) || typeof obj === "string") return obj.length;
+    return 0;
+}
+
+// Funções de string
+function upper(str) {
+    return String(str).toUpperCase();
+}
+
+function lower(str) {
+    return String(str).toLowerCase();
+}
+
+function repetir(str, n) {
+    return String(str).repeat(n || 0);
+}
+
+function cortar(str, inicio, fim) {
+    return String(str).slice(inicio || 0, fim);
+}
+
+/* ============================================================
+   FUNÇÕES CEGONHA — REAIS
+   ============================================================ */
+
+window.funcoesCegonha = {};
+
+function processarFuncoesCegonha(linhas) {
+    let novasLinhas = [];
+    let capturar = false;
+    let nomeFunc = "";
+    let argsFunc = "";
+    let corpo = [];
+
+    linhas.forEach(l => {
+
+        if (l.startsWith("funcao ")) {
+            capturar = true;
+
+            let m = l.match(/funcao\s+(\w+)\s*\((.*?)\)\s*\{/);
+            if (m) {
+                nomeFunc = m[1];
+                argsFunc = m[2];
+            }
+            return;
+        }
+
+        if (capturar && l === "}") {
+            capturar = false;
+
+            window.funcoesCegonha[nomeFunc] = new Function(argsFunc, corpo.join("\n"));
+
+            corpo = [];
+            nomeFunc = "";
+            argsFunc = "";
+            return;
+        }
+
+        if (capturar) {
+            corpo.push(l);
+            return;
+        }
+
+        novasLinhas.push(l);
+    });
+
+    return novasLinhas;
+}
+
+/* ============================================================
+   ENQUANTO CEGONHA — SEGURO (máx. 100 loops)
+   ============================================================ */
+
+function processarEnquantoCegonha(linhas, resolver) {
+    let novas = [];
+    let i = 0;
+
+    while (i < linhas.length) {
+        let l = linhas[i];
+
+        // detectar: enquanto (condicao) {
+        if (/^enquanto\s*\(.*\)\s*\{$/.test(l)) {
+
+            let m = l.match(/^enquanto\s*\((.*)\)\s*\{$/);
+            let condExpr = m ? m[1] : "false";
+
+            // capturar bloco
+            let bloco = [];
+            i++;
+            while (i < linhas.length && linhas[i] !== "}") {
+                bloco.push(linhas[i]);
+                i++;
+            }
+            i++; // saltar }
+
+            // executar loop seguro
+            let limite = 0;
+            while (resolver(condExpr) && limite < 100) {
+                novas.push(...bloco);
+                limite++;
+            }
+
+            continue;
+        }
+
+        novas.push(l);
+        i++;
+    }
+
+    return novas;
+}
+
+/* ============================================================
+   MOTOR CEGONHA — COMPLETO E ESTÁVEL (BASE)
+   ============================================================ */
+
+function executarCegonhaEngine(html) {
+    return html.replace(/<cegonha>([\s\S]*?)<\/cegonha>/g, function(_, codigo) {
+
+        let vars = {};
+        let saida = "";
+
+        let linhas = codigo.split(/\r?\n/)
+            .map(l => l.trim())
+            .filter(l => l !== "");
+
+        // Funções Cegonha
+        linhas = processarFuncoesCegonha(linhas);
+
+        function resolver(expr) {
+            let r = expr;
+
+            // variáveis
+            for (let v in vars) {
+                r = r.replace(new RegExp("\\b" + v + "\\b", "g"), vars[v]);
+            }
+
+            // funções internas
+            r = r.replace(/data\(\)/g, JSON.stringify(new Date().toLocaleDateString()));
+            r = r.replace(/hora\(\)/g, JSON.stringify(new Date().toLocaleTimeString()));
+
+            // funções matemáticas
+            r = r.replace(/\bsqrt\(/g, "Math.sqrt(");
+            r = r.replace(/\babs\(/g, "Math.abs(");
+            r = r.replace(/\bround\(/g, "Math.round(");
+            r = r.replace(/\bfloor\(/g, "Math.floor(");
+            r = r.replace(/\bceil\(/g, "Math.ceil(");
+            r = r.replace(/\bsin\(/g, "Math.sin(");
+            r = r.replace(/\bcos\(/g, "Math.cos(");
+            r = r.replace(/\btan\(/g, "Math.tan(");
+            r = r.replace(/\blog\(/g, "Math.log(");
+
+            // constantes
+            r = r.replace(/\bpi\b/g, "Math.PI");
+            r = r.replace(/\be\b/g, "Math.E");
+
+            // chamadas de funções Cegonha
+            r = r.replace(/\b(\w+)\s*\((.*?)\)/g, function(_, nome, args) {
+                if (window.funcoesCegonha[nome]) {
+                    let partes = args.trim() === "" ? [] : args.split(",").map(a => resolver(a.trim()));
+                    return window.funcoesCegonha[nome](...partes);
+                }
+                return `${nome}(${args})`;
+            });
+
+            try { 
+                return new Function('"use strict"; return (' + r + ')')();
+
+            }
+            catch { 
+                return expr; 
+            }
+        }
+
+        // ENQUANTO — expandir loops em linhas
+        linhas = processarEnquantoCegonha(linhas, resolver);
+
+        // SE / SENAO
+        let linhasExecutar = [];
+        let i = 0;
+
+        while (i < linhas.length) {
+            let l = linhas[i];
+
+            // linha "se (condicao) {"
+            if (/^se\s*\(.*\)\s*\{$/.test(l)) {
+                let m = l.match(/^se\s*\((.*)\)\s*\{$/);
+                let condExpr = m ? m[1] : "false";
+
+                // coletar bloco do SE
+                let blocoSe = [];
+                i++;
+                while (i < linhas.length && linhas[i] !== "}") {
+                    blocoSe.push(linhas[i]);
+                    i++;
+                }
+                i++; // saltar "}"
+
+                // verificar se há SENAO logo a seguir
+                let blocoSenao = [];
+                if (i < linhas.length && /^senao\s*\{$/.test(linhas[i])) {
+                    i++; // linha "senao {"
+                    while (i < linhas.length && linhas[i] !== "}") {
+                        blocoSenao.push(linhas[i]);
+                        i++;
+                    }
+                    i++; // saltar "}"
+                }
+
+                // avaliar condição
+                let cond = resolver(condExpr);
+
+                if (cond) {
+                    linhasExecutar.push(...blocoSe);
+                } else {
+                    linhasExecutar.push(...blocoSenao);
+                }
+
+                continue;
+            }
+
+            // linha normal
+            linhasExecutar.push(l);
+            i++;
+        }
+
+        // EXECUTAR LINHAS FINAIS
+        linhasExecutar.forEach(l => {
+
+            // atribuição
+            if (l.includes("=") && !l.startsWith("cegonha(")) {
+                let [nome, valor] = l.split("=").map(s => s.trim());
+                vars[nome] = resolver(valor);
+                return;
+            }
+
+            // comando cegonha()
+            if (l.startsWith("cegonha(")) {
+                let conteudo = l.replace(/^cegonha\s*\(|\)$/g, "").trim();
+
+                if (conteudo.startsWith('"') || conteudo.startsWith("'")) {
+                    saida += conteudo.slice(1, -1);
+                } else {
+                    saida += resolver(conteudo);
+                }
+            }
+        });
+
+        return `<div style='padding:10px;background:#eee;border-left:4px solid purple'>${saida}</div>`;
+    });
+}
+
+window.onload = () => {
+    document.querySelectorAll("div[id^='conteudo']")
+        .forEach(div => div.innerHTML = executarCegonhaEngine(div.innerHTML));
+};
+</script>
+<p style="color:orange;"> (˶◕‿◕)🌹💕 cegonha(˶◕‿◕)🌹💕sja feliz por favor!(˶◕‿◕)🌹💕 Que Deus vos abençoe.(˶◕‿◕)🌹💕</p>
+<script>
+// 1. Sandbox (sem mexer no motor)
+function sandboxCegonhaProtegida(html) {
+
+    const proibidos = [
+        "window", "document", "eval", "Function",
+        "location", "innerHTML", "outerHTML",
+        "script", "onerror", "onload"
+    ];
+
+    return html.replace(/<cegonha>([\s\S]*?)<\/cegonha>/g, function(_, codigo) {
+
+        for (let p of proibidos) {
+            let regex = new RegExp("\\b" + p + "\\b", "i");
+            if (regex.test(codigo)) {
+                return `<div style="color:red;padding:10px;border:2px solid red">
+                    ERRO: código bloqueado pela sandbox (uso de "${p}")
+                </div>`;
+            }
+        }
+
+        return `<cegonha>${codigo}</cegonha>`;
+    });
+}
+
+// 2. Mantém SEU onload, só acrescenta a sandbox antes do motor
+window.onload = () => {
+    document.querySelectorAll("div[id^='conteudo']")
+        .forEach(div => {
+            let seguro = sandboxCegonhaProtegida(div.innerHTML);  // passa pela sandbox
+            div.innerHTML = executarCegonhaEngine(seguro);        // motor igualzinho
+        });
+};
+</script>
+
+
+
+
+</body>
+</html>
+
+
+
