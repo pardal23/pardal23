@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Cegonha — Motor Completo 23</title>
+<style>
+h2 { text-align:center; color:orange; }
+.maria { text-align:center; color:#9400D3; }
+
+h1 { text-align:center; color:#DC143C; }
+.maria1 { text-align:center; color:#4B0082; }
+</style>
+</head>
+<body>
+
+<h2>Gratidão há mae Maria.</h2>
+
+<div id="conteudo" class="maria">
+<cegonha>
+
+
+cegonha("Amo Jesus ")
+cegonha("<br>")
+cegonha('<img src="https://i.pinimg.com/736x/8a/ec/28/8aec283387de5a40a023ab3ab5fecdd9.jpg" width="400px" weight="300px"><br>')
+
+cegonha("A cruz minha estrada<br>A fé meu caminhar.<br> ")
+cegonha( repetir("que verdade este estranho estar.<br> ")
+cegonha("<br>")
+
+cegonha('<img src="https://i.pinimg.com/736x/99/c6/ff/99c6ff931d7d42a11ab830d975462717.jpg" width="90px" height="70px"><br>')
+cegonha('<img src="https://png.pngtree.com/background/20230401/original/pngtree-angel-heaven-dream-advertising-background-picture-image_2249402.jpg" width="90px" height="70px">')
+
+</cegonha>
+</div>
+
+<h1>As contas da cegonha.</h1>
+
+<div id="conteudo1" class="maria1">
+<cegonha>
+a = 23**67/34
+cegonha(a)
+cegonha("<br>")
+cegonha("Seja feliz por favor<br>")
+b = 234*2345/345+98
+cegonha(b)
+cegonha("<br>")
+cegonha("A cegonha deseja que Deus vos abençoe<br>")
+a = 23**34+56
+cegonha(a)
+</cegonha>
+</div>
+
+<p style="color:orange;">(˶◕‿◕)🌹💕 cegonha(˶◕‿◕)🌹💕sja feliz por favor!(˶◕‿◕)🌹💕 Que Deus vos abençoe.(˶◕‿◕)🌹💕</p>
+
+<script type="text/javascript">
+//<![CDATA[
+
+/* =========================
+   FUNÇÕES SEGURAS EXTRA
+   ========================= */
+
+// repetir texto n vezes
+function repetir(str, n) {
+    n = Number(n) || 0;
+    if (n < 0 || n > 1000) n = 0;
+    return String(str).repeat(n);
+}
+
+/* =========================
+   SANDBOX CEGONHA — MÁXIMA
+   ========================= */
+
+function sandboxCegonha(html) {
+    const proibidos = [
+        /window\b/i,
+        /document\b/i,
+        /eval\b/i,
+        /Function\b/i,
+        /onload\b/i,
+        /onerror\b/i,
+        /<script/i,
+        /<\/script/i
+    ];
+
+    return html.replace(/<cegonha>([\s\S]*?)<\/cegonha>/g, function(_, codigo) {
+        for (let r of proibidos) {
+            if (r.test(codigo)) {
+                return "<div style='color:red;padding:10px;border:2px solid red'>" +
+                       "ERRO: bloco cegonha bloqueado pela sandbox por segurança." +
+                       "</div>";
+            }
+        }
+        return "<cegonha>" + codigo + "</cegonha>";
+    });
+}
+
+/* =========================
+   MOTOR CEGONHA 2 — BASE
+   SEM LOOP, SEM ELSE
+   ========================= */
+
+function isExpressaoSegura(expr) {
+    // apenas números, operadores e parênteses
+    return /^[0-9+\-*/().\s%^]*$/.test(expr);
+}
+
+function avaliarExpressaoSegura(expr) {
+    expr = String(expr).trim();
+    if (!isExpressaoSegura(expr) || expr === "") return 0;
+    try {
+        // só operadores matemáticos, nada de nomes
+        return Function('"use strict"; return (' + expr + ')')();
+    } catch (e) {
+        return 0;
+    }
+}
+
+function executarCegonhaSeguro(html) {
+    return html.replace(/<cegonha>([\s\S]*?)<\/cegonha>/g, function(_, codigo) {
+
+        let vars = {};
+        let saida = "";
+
+        let linhas = codigo.split(/\r?\n/)
+            .map(l => l.trim())
+            .filter(l => l !== "");
+
+        linhas.forEach(l => {
+
+            // atribuição: a = 23**67/34
+            if (l.includes("=") && !l.startsWith("cegonha(")) {
+                let partes = l.split("=");
+                if (partes.length >= 2) {
+                    let nome = partes[0].trim();
+                    let valor = partes.slice(1).join("=").trim();
+
+                    if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(nome) && isExpressaoSegura(valor)) {
+                        vars[nome] = avaliarExpressaoSegura(valor);
+                    }
+                }
+                return;
+            }
+
+            // comando cegonha(...)
+            if (l.startsWith("cegonha(")) {
+                let conteudo = l.replace(/^cegonha\s*\(|\)$/g, "").trim();
+
+                // literal de string
+                if ((conteudo.startsWith('"') && conteudo.endsWith('"')) ||
+                    (conteudo.startsWith("'") && conteudo.endsWith("'"))) {
+                    saida += conteudo.slice(1, -1);
+                    return;
+                }
+
+                // variável simples
+                if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(conteudo) && conteudo in vars) {
+                    saida += vars[conteudo];
+                    return;
+                }
+
+                // expressão numérica segura
+                if (isExpressaoSegura(conteudo)) {
+                    saida += avaliarExpressaoSegura(conteudo);
+                    return;
+                }
+
+                // fallback: se não for nada disso, não executa
+                saida += "";
+            }
+        });
+
+        return "<div style='padding:10px;background:#eee;border-left:4px solid purple'>" +
+               saida +
+               "</div>";
+    });
+}
+
+/* =========================
+   INICIALIZAÇÃO — ANTI‑BLOGGER
+   encadeia com onload existente
+   ========================= */
+
+(function(oldOnload) {
+    window.onload = function(e) {
+        if (typeof oldOnload === "function") {
+            try { oldOnload(e); } catch (err) {}
+        }
+
+        document.querySelectorAll("div[id^='conteudo']")
+            .forEach(function(div) {
+                var seguro = sandboxCegonha(div.innerHTML);
+                div.innerHTML = executarCegonhaSeguro(seguro);
+            });
+    };
+})(window.onload);
+
+//]]>
+</script>
+
+</body>
+</html>
